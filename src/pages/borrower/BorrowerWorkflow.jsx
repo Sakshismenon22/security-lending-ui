@@ -1,12 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AgGridReact } from "ag-grid-react";
-import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
+import { useEffect, useMemo, useState } from "react";
 import { getData, postData } from "../../api/borrowerApi";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./BorrowerWorkflow.css";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 const ORG_ID = "";
 
@@ -56,6 +50,7 @@ const emptyLoan = {
 function rowsOf(value) {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.content)) return value.content;
+  if (Array.isArray(value?.data)) return value.data;
   return [];
 }
  
@@ -126,7 +121,6 @@ export default function BorrowerWorkflow() {
   const [securitySearch, setSecuritySearch] = useState("");
   const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
-  const gridRef = useRef(null);
   const base = `/organizations/${orgId}`;
  
   const approvedLocates = useMemo(
@@ -179,12 +173,17 @@ export default function BorrowerWorkflow() {
         }
       });
 
+      nextState.locates = nextState.locates.map((locate) => ({
+        ...locate,
+        agreementId: locate.agreementId ?? locate.mslaId ?? locate.msla_id ?? null,
+      }));
+      nextState.reservations = nextState.reservations.map((reservation) => ({
+        ...reservation,
+        locateId: reservation.locateId ?? reservation.locate_id ?? reservation.locateRequestId ?? null,
+        requestedQuantity: reservation.requestedQuantity ?? reservation.quantity ?? null,
+      }));
+
       setAgreements(nextState.agreements);
-      useEffect(() => {
-        console.log("Updated Agreements:", agreements);
-      console.log("Updated Agreement rows:", agreementRows);
-      }, [agreements, agreementRows]);
-      
       setLocates(nextState.locates);
       setReservations(nextState.reservations);
       setLoans(nextState.loans);
@@ -621,105 +620,79 @@ export default function BorrowerWorkflow() {
                </form>
              )}
 
-           {/* <div className="wf-ag  -grid-wrap">
-               <AgGridReact
-                 className="ag-theme-alpine"
-                 ref={gridRef}
-                rowData={agreementRows}
-                 columnDefs={[
-                  { field: "displayNumber", headerName: "MSLA", flex: 1.4, minWidth: 170 },
-                   { field: "lenderName", headerName: "Lender", flex: 1.2, minWidth: 150 },
-                   { field: "creditLimit", headerName: "Credit limit", flex: 1, minWidth: 150, valueFormatter: (params) => money(params.value) },
-                   { field: "feeRate", headerName: "Fee rate", flex: 0.8, minWidth: 120, valueFormatter: (params) => Number(params.value || 0).toFixed(4) },
-                   { field: "expiryDate", headerName: "Expiry", flex: 1, minWidth: 140, valueFormatter: (params) => formatDate(params.value) },
-                   { field: "status", headerName: "Status", flex: 0.8, minWidth: 120, cellClass: "wf-grid-status-cell" },
-                 ]}
-                 defaultColDef={{ sortable: true, resizable: true, filter: true, flex: 1 }}
-                 rowSelection="single"
-                 rowMultiSelectWithClick={false}
-                 animateRows={true}
-                 rowHeight={42}
-                headerHeight={34}
-                 onGridReady={(params) => params.api.sizeColumnsToFit()}
-                onFirstDataRendered={(params) => params.api.sizeColumnsToFit()}
-                onRowClicked={(event) => setSelectedAgreementId(String(event.data.id))}
-                 getRowId={(params) => String(params.data.id)}
-                 noRowsOverlayComponent={() => <div className="wf-empty-state compact">No MSLA records available.</div>}
-                 style={{ width: "100%", height: "100%" }}
-               />
-             </div> */}
-             <div className="wf-ag-grid-wrap">
-  <AgGridReact
-    ref={gridRef}
-    theme="legacy"
-    className="ag-theme-alpine"
-    rowData={agreementRows}
-    columnDefs={[
-      {
-        field: "displayNumber",
-        headerName: "MSLA",
-        flex: 1.4,
-        minWidth: 170,
-      },
-      {
-        field: "lenderName",
-        headerName: "Lender",
-        flex: 1.2,
-        minWidth: 150,
-      },
-      {
-        field: "creditLimit",
-        headerName: "Credit limit",
-        flex: 1,
-        minWidth: 150,
-        valueFormatter: (params) => money(params.value),
-      },
-      {
-        field: "feeRate",
-        headerName: "Fee rate",
-        flex: 0.8,
-        minWidth: 120,
-        valueFormatter: (params) =>
-          Number(params.value || 0).toFixed(4),
-      },
-      {
-        field: "expiryDate",
-        headerName: "Expiry",
-        flex: 1,
-        minWidth: 140,
-        valueFormatter: (params) => formatDate(params.value),
-      },
-      {
-        field: "status",
-        headerName: "Status",
-        flex: 0.8,
-        minWidth: 120,
-        cellClass: "wf-grid-status-cell",
-      },
-    ]}
-    defaultColDef={{
-      sortable: true,
-      resizable: true,
-      filter: true,
-      flex: 1,
-    }}
-    rowSelection={{ mode: "singleRow" }}
-    animateRows={true}
-    rowHeight={42}
-    headerHeight={34}
-    onGridReady={(params) => params.api.sizeColumnsToFit()}
-    onFirstDataRendered={(params) => params.api.sizeColumnsToFit()}
-    onRowClicked={(event) =>
-      setSelectedAgreementId(String(event.data.id))
-    }
-    getRowId={(params) => String(params.data.id)}
-    noRowsOverlayComponent={() => (
-      <div className="wf-empty-state compact">
-        No MSLA records available.
-      </div>
-    )}
-  />
-</div>
+            <div className="wf-table-wrap">
+              <table className="wf-table">
+                <thead>
+                  <tr>
+                    <th>MSLA</th>
+                    <th>Lender</th>
+                    <th>Credit limit</th>
+                    <th>Fee rate</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agreementRows.length ? agreementRows.map((agreement) => (
+                    <tr
+                      key={agreement.id}
+                      className={String(selectedAgreementId) === String(agreement.id) ? "wf-selected-row" : ""}
+                      onClick={() => setSelectedAgreementId(String(agreement.id))}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td>{agreement.displayNumber}</td>
+                      <td>{agreement.lenderName}</td>
+                      <td>{agreement.displayCreditLimit}</td>
+                      <td>{Number(agreement.feeRate || 0).toFixed(4)}</td>
+                      <td>{agreement.displayExpiry}</td>
+                      <td><span className="wf-status">{agreement.status}</span></td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="wf-empty">No MSLA records available.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedAgreement && (
+              <div className="wf-selected-panel">
+                <div className="wf-selected-header">
+                  <h3>{selectedAgreement.displayNumber}</h3>
+                  <span className="wf-status">{selectedAgreement.status}</span>
+                </div>
+
+                {selectedAgreementLoans.length ? (
+                  <div className="wf-table-wrap">
+                    <table className="wf-table">
+                      <thead>
+                        <tr>
+                          <th>Loan ID</th>
+                          <th>Reservation</th>
+                          <th>Quantity</th>
+                          <th>Status</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedAgreementLoans.map((loan) => (
+                          <tr key={loan.id}>
+                            <td>{loan.id}</td>
+                            <td>{loan.reservationId ?? "—"}</td>
+                            <td>{loan.quantity ?? "—"}</td>
+                            <td><span className="wf-status">{loan.status || "—"}</span></td>
+                            <td>{formatDate(loan.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="wf-empty-state">No loans for this MSLA yet.</div>
+                )}
+              </div>
+            )}
  
            </div>
          </section>
@@ -931,11 +904,17 @@ export default function BorrowerWorkflow() {
              <h3>Locate request register</h3>
              <DataTable rows={locates} columns={[
                { key: "id", label: "Request ID" },
-               { key: "agreementId", label: "Agreement" },
+               {
+                 key: "agreementId",
+                 label: "Agreement",
+                 render: (r) => (
+                   r.agreementId ?? r.mslaId ?? r.msla_id ?? "—"
+                 ),
+               },
                { key: "securityId", label: "Security ID" },
                { key: "quantity", label: "Quantity" },
                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
- { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
+               { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
              ]} />
            </div>
          </section>
@@ -955,7 +934,13 @@ export default function BorrowerWorkflow() {
              <h3>Approved locates eligible for reservation</h3>
              <DataTable rows={approvedLocates} columns={[
                { key: "id", label: "Locate ID" },
-               { key: "agreementId", label: "Agreement" },
+               {
+                 key: "agreementId",
+                 label: "Agreement",
+                 render: (r) => (
+                   r.agreementId ?? r.mslaId ?? r.msla_id ?? "—"
+                 ),
+               },
                { key: "securityId", label: "Security ID" },
                { key: "quantity", label: "Approved quantity", render: r => r.approvedQuantity ?? r.quantity },
                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status}</span> },
@@ -974,10 +959,18 @@ export default function BorrowerWorkflow() {
              <h3>Reservation register</h3>
              <DataTable rows={reservations} columns={[
                { key: "id", label: "Reservation ID" },
-               { key: "locateRequestId", label: "Locate ID" },
-               { key: "quantity", label: "Quantity" },
+               {
+                 key: "locateId",
+                 label: "Locate ID",
+                 render: (r) => r.locateId ?? r.locate_id ?? r.locateRequestId ?? "—",
+               },
+               {
+                 key: "requestedQuantity",
+                 label: "Requested",
+                 render: (r) => r.requestedQuantity ?? r.quantity ?? "—",
+               },
                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-               { key: "createdAt", label: "Requested", render: r => formatDate(r.createdAt) },
+               { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
              ]} />
            </div>
          </section>

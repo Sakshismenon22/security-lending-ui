@@ -330,6 +330,36 @@ body {
 .wf-table tbody tr:hover {
   background: #fafcfe;
 }
+
+.wf-selected-row {
+  background: #eefaf8;
+}
+
+.wf-selected-row td {
+  border-bottom-color: #cfeae4;
+}
+
+.wf-selected-panel {
+  margin-top: 16px;
+  border: 1px solid #dfeaf4;
+  border-radius: 10px;
+  background: #f9fbfd;
+  padding: 14px;
+}
+
+.wf-selected-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wf-selected-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #1c3d58;
+}
  
 .wf-empty {
   text-align: center;
