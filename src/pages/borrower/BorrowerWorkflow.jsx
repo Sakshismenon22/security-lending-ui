@@ -205,7 +205,12 @@ export default function BorrowerWorkflow() {
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
       setWatchlist(nextState.watchlist);
-      setAccount(nextState.account);
+      setAccount(nextState.account && typeof nextState.account === "object"
+        ? (nextState.account.account ?? nextState.account)
+        : null);
+      if (!nextState.account) {
+        showNotice("error", "Unable to load the account balance. Check GET /api/v1/organizations/" + orgId + "/account in borrower-service.");
+      }
     } catch (error) {
       showNotice("error", error.response?.data?.detail ||
         error.response?.data?.message || "Unable to load borrower data.");
@@ -334,7 +339,9 @@ export default function BorrowerWorkflow() {
       };
       const order = await postData(`${base}/orders`, payload);
       const refreshedAccount = await getData(`${base}/account`);
-      setAccount(refreshedAccount);
+      setAccount(refreshedAccount && typeof refreshedAccount === "object"
+        ? (refreshedAccount.account ?? refreshedAccount)
+        : null);
       const status = String(order?.status ?? "").toUpperCase();
       if (status === "FILLED") {
         showNotice("success", `${tradeSide} order filled at ${money(order.averagePrice ?? order.executionPrice ?? currentTradePrice)}. Available balance refreshed.`);
@@ -592,7 +599,14 @@ export default function BorrowerWorkflow() {
             <button className="wf-dashboard-card" onClick={() => setActiveTab("reservations")}><span>CAPACITY</span><strong>Reservations</strong><small>Track approved locates and reservation requests</small><b>View reservations →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
           </div>
-          <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid"><div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div><div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div><div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div><div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div></div></div>
+          <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid">
+            <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
+            <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
+            <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
+            <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
+            <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
+            <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
+          </div></div></div></div>
         </section>
       )}
 
