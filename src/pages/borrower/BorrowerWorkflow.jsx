@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { getData, getMarketData, postData, putData } from "../../api/borrowerApi";
 import "./BorrowerWorkflow.css";
 
@@ -497,8 +497,7 @@ export default function BorrowerWorkflow() {
   }
 
   async function submitLoan(e) {
-    e.preventDefault();
- 
+    e.preventDefault(); 
     const collateral = loanForm.assetType === "CASH"
       ? [{
           assetType: "CASH",
@@ -946,8 +945,8 @@ export default function BorrowerWorkflow() {
                     const expanded = String(selectedAgreementId) === String(agreement.id);
                     const agreementLoans = loans.filter((loan) => String(loan.mslaId ?? loan.agreementId ?? loan.msla_id) === String(agreement.id));
                     return (
-                      <>
-                        <tr key={agreement.id} className={expanded ? "wf-selected-row" : ""}>
+                      <Fragment key={agreement.id}>
+                        <tr className={expanded ? "wf-selected-row" : ""}>
                           <td><button type="button" className="wf-expand-link" onClick={() => setSelectedAgreementId(expanded ? null : String(agreement.id))}>{expanded ? "▾" : "▸"} {agreement.displayNumber}</button></td>
                           <td>{agreement.lenderName}</td><td>{agreement.displayCreditLimit}</td><td>{Number(agreement.feeRate || 0).toFixed(4)}</td><td>{agreement.displayExpiry}</td>
                           <td><span className="wf-status">{agreement.status || "—"}</span></td>
@@ -965,7 +964,7 @@ export default function BorrowerWorkflow() {
                             </table></div> : <div className="wf-empty-state compact">No loans are associated with this MSLA.</div>}
                           </div>
                         </td></tr>}
-                      </>
+                      </Fragment>
                     );
                   }) : <tr><td colSpan={7} className="wf-empty">No MSLA records available.</td></tr>}
                 </tbody>
@@ -997,8 +996,7 @@ export default function BorrowerWorkflow() {
               <p>Propose lending terms to a registered lender.</p>
              </div>
            </div>
- 
-           <div className="wf-panel">
+            <div className="wf-panel">
              <h3>New MSLA proposal</h3>
   <form onSubmit={submitAgreement}>
                <div className="wf-form-grid">
