@@ -466,3 +466,41 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
 @media (max-width: 900px) {
   .wf-holdings-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+
+
+/* Expandable MSLA rows and record detail dialogs */
+.wf-expand-link {
+  display: inline-flex; align-items: center; gap: 7px; padding: 4px 0;
+  border: 0; color: #087d61; background: transparent; font: inherit;
+  font-weight: 800; cursor: pointer; text-align: left;
+}
+.wf-expand-link:hover { color: #065d49; text-decoration: underline; }
+.wf-expanded-row > td { padding: 0 !important; background: #f5f9fb; }
+.wf-expanded-content { padding: 14px 16px 16px; border-left: 3px solid #0aa879; }
+.wf-expanded-content .wf-child-header { padding-top: 0; }
+.wf-icon-button {
+  display: inline-grid; place-items: center; width: 29px; height: 29px;
+  border: 1px solid #d6e3eb; border-radius: 5px; color: #087d61;
+  background: #fff; font-size: 15px; cursor: pointer;
+}
+.wf-icon-button:hover { border-color: #0aa879; background: #effaf5; }
+.wf-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: 24px; background: rgba(5,20,35,.58); backdrop-filter: blur(2px);
+}
+.wf-detail-modal {
+  width: min(760px, 100%); max-height: min(82vh, 760px); overflow: auto;
+  padding: 22px; border: 1px solid #dce6ed; border-radius: 9px;
+  background: #fff; box-shadow: 0 24px 70px rgba(3,18,32,.28);
+}
+.wf-detail-modal .wf-panel-header { padding-bottom: 13px; border-bottom: 1px solid #e7edf2; }
+.wf-detail-modal .wf-panel-header h2 { margin-top: 4px; font-size: 18px; }
+.wf-detail-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding-top: 16px; }
+.wf-detail-field { min-width: 0; padding: 11px 12px; border: 1px solid #e5ecf1; border-radius: 6px; background: #f8fafc; }
+.wf-detail-field span { display: block; margin-bottom: 6px; color: #78899a; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.wf-detail-field strong { display: block; overflow-wrap: anywhere; color: #1b3853; font-size: 11px; font-weight: 700; white-space: pre-wrap; }
+@media (max-width: 620px) {
+  .wf-modal-backdrop { padding: 10px; }
+  .wf-detail-modal { max-height: 88vh; padding: 15px; }
+  .wf-detail-grid { grid-template-columns: 1fr; }
+}
