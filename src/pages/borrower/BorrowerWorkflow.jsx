@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getData, postData, putData } from "../../api/borrowerApi";
+import { getData, getMarketData, postData, putData } from "../../api/borrowerApi";
 import "./BorrowerWorkflow.css";
 
 const ORG_ID = "";
@@ -117,7 +117,7 @@ export default function BorrowerWorkflow() {
   const [securityHistory, setSecurityHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [tradeSide, setTradeSide] = useState("BUY");
-  const [tradeQuantity, setTradeQuantity] = useState("");
+  const [tradeQuantity, setTradeQuantity] = useState("");\n  const [tradeOrderType, setTradeOrderType] = useState("MARKET");\n  const [tradeLimitPrice, setTradeLimitPrice] = useState("");\n  const [tradeSource, setTradeSource] = useState("OWNED");\n  const [account, setAccount] = useState(null);\n  const [orderSubmitting, setOrderSubmitting] = useState(false);
  
   const [agreementForm, setAgreementForm] = useState(emptyAgreement);
   const [isCreatingAgreement, setIsCreatingAgreement] = useState(false);
@@ -158,7 +158,7 @@ export default function BorrowerWorkflow() {
         { key: "loans", call: getData(`${base}/loans`) },
         { key: "lenders", call: getData(`${base}/lenders`) },
         { key: "securities", call: getData("/securities") },
-        { key: "watchlist", call: getData(`${base}/watchlist`) },
+        { key: "watchlist", call: getData(`${base}/watchlist`) },\n        { key: "account", call: getData(`${base}/account`) },
       ];
 
       const results = await Promise.allSettled(requests.map((request) => request.call));
@@ -175,7 +175,7 @@ export default function BorrowerWorkflow() {
       results.forEach((result, index) => {
         const key = requests[index].key;
         if (result.status === "fulfilled") {
-          nextState[key] = rowsOf(result.value);
+          nextState[key] = key === "account" ? result.value : rowsOf(result.value);
         } else {
           console.warn(`Unable to load ${key}:`, result.reason);
         }
@@ -197,7 +197,7 @@ export default function BorrowerWorkflow() {
       setLoans(nextState.loans);
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
-      setWatchlist(nextState.watchlist);
+      setWatchlist(nextState.watchlist);\n      setAccount(nextState.account);
     } catch (error) {
       showNotice("error", error.response?.data?.detail ||
         error.response?.data?.message || "Unable to load borrower data.");
@@ -283,26 +283,63 @@ export default function BorrowerWorkflow() {
     setSecurityHistory([]);
     setHistoryLoading(true);
     try {
-      const history = await getData(`/securities/${security.id}/history`);
+      // Refresh obtains the latest completed one-minute close from market-data-service
+      // and stores the authoritative quote in the borrower's security master.
+      const refreshed = await postData(`/securities/${security.id}/refresh`, {});
+      const detail = await getData(`/securities/${security.id}`);
+      setSelectedTradeSecurity({ ...security, ...(refreshed || {}), ...(detail || {}) });
+      const history = await getMarketData("/api/v1/security-data/history", {
+        symbol: security.symbol ?? security.ticker,
+        exchange: security.exchange,
+      });
       setSecurityHistory(rowsOf(history));
     } catch (error) {
-      showNotice("error", error.response?.data?.message || "Unable to load security price history.");
+      showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to load current price or candlestick history.");
     } finally {
       setHistoryLoading(false);
     }
   }
 
   const tradeCandles = securityHistory.map((point) => ({
-    date: point.date ?? point.timestamp ?? point.tradingDate ?? point.time,
-    open: Number(point.open ?? point.openPrice ?? point.close ?? point.price ?? 0),
-    high: Number(point.high ?? point.highPrice ?? point.close ?? point.price ?? 0),
-    low: Number(point.low ?? point.lowPrice ?? point.close ?? point.price ?? 0),
-    close: Number(point.close ?? point.closePrice ?? point.price ?? 0),
+    date: point.tradedDateTimestamp ?? point.date ?? point.timestamp ?? point.tradingDate ?? point.time,
+    open: Number(point.open ?? point.openPrice ?? 0),
+    high: Number(point.high ?? point.highPrice ?? 0),
+    low: Number(point.low ?? point.lowPrice ?? 0),
+    close: Number(point.close ?? point.closePrice ?? 0),
   })).filter((point) => point.open > 0 && point.high > 0 && point.low > 0 && point.close > 0);
 
-  function previewTrade(e) {
+  const currentTradePrice = Number(selectedTradeSecurity?.price ?? selectedTradeSecurity?.close ?? 0);
+  const estimatedOrderTotal = currentTradePrice * Number(tradeQuantity || 0);
+
+  async function submitTrade(e) {
     e.preventDefault();
-    showNotice("error", "Order preview only: a buy/sell order API is not yet available in the borrower backend.");
+    if (!selectedTradeSecurity || !currentTradePrice || Number(tradeQuantity) <= 0) return;
+    setOrderSubmitting(true);
+    try {
+      const payload = {
+        securityId: Number(selectedTradeSecurity.id),
+        side: tradeSide,
+        type: tradeOrderType,
+        source: tradeSource,
+        quantity: Number(tradeQuantity),
+        ...(tradeOrderType === "LIMIT" ? { limitPrice: Number(tradeLimitPrice) } : {}),
+      };
+      const order = await postData(`${base}/orders`, payload);
+      const refreshedAccount = await getData(`${base}/account`);
+      setAccount(refreshedAccount);
+      const status = String(order?.status ?? "").toUpperCase();
+      if (status === "FILLED") {
+        showNotice("success", `${tradeSide} order filled at ${money(order.averagePrice ?? order.executionPrice ?? currentTradePrice)}. Available balance refreshed.`);
+      } else {
+        showNotice("success", `Order #${order?.id ?? "submitted"} submitted. Status: ${order?.status ?? "PENDING"}. Balance reflects backend processing.`);
+      }
+      setTradeQuantity("");
+      setTradeLimitPrice("");
+    } catch (error) {
+      showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Order could not be submitted.");
+    } finally {
+      setOrderSubmitting(false);
+    }
   }
 
   function showNotice(type, message) {
@@ -615,13 +652,20 @@ export default function BorrowerWorkflow() {
                 </> : <div className="wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose an instrument from your watchlist to display its candlestick chart.</p></div>}
               </section>
               <section className="wf-panel wf-order-panel">
-                <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Preview only</span></div>
-                <div className="wf-trade-switch"><button className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
-                <form onSubmit={previewTrade}><div className="wf-form-grid">
+                <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Paper execution</span></div>
+                <div className="wf-account-balance"><span>Available cash balance</span><strong>{money(account?.available)}</strong></div>
+                <div className="wf-trade-switch"><button type="button" className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button type="button" className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
+                <form onSubmit={submitTrade}><div className="wf-form-grid">
                   <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>
-                  <Field label="Order type"><select defaultValue="MARKET"><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
+                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
+                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
+                  {tradeOrderType === "LIMIT" && <Field label="Limit price"><input type="number" min="0.000001" step="0.01" required value={tradeLimitPrice} onChange={e=>setTradeLimitPrice(e.target.value)} placeholder="Enter limit price"/></Field>}
                   <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
-                </div><div className="wf-info">Order submission will be enabled once the backend exposes buy/sell execution endpoints. No order is sent from this screen yet.</div><div className="wf-actions"><button className="wf-primary" type="submit" disabled={!selectedTradeSecurity || !tradeQuantity}>{tradeSide==="BUY"?"Preview buy order":"Preview sell order"}</button></div></form>
+                  <Field label="Position source"><select value={tradeSource} onChange={e=>setTradeSource(e.target.value)}><option value="OWNED">Owned position / cash</option><option value="BORROWED">Borrowed position / short cover</option></select></Field>
+                </div>
+                <div className="wf-order-estimate"><div><span>Estimated total</span><strong>{money(estimatedOrderTotal)}</strong></div><small>{money(currentTradePrice)} × {Number(tradeQuantity || 0).toLocaleString("en-IN")} units</small></div>
+                <div className="wf-info">Market orders are paper-executed against the latest completed one-minute close. Limit orders remain pending until the market price reaches the limit. The backend validates cash or sellable quantity and records balance transactions.</div>
+                <div className="wf-actions"><button className="wf-primary" type="submit" disabled={!selectedTradeSecurity || !currentTradePrice || !tradeQuantity || orderSubmitting || (tradeOrderType === "LIMIT" && !tradeLimitPrice)}>{orderSubmitting ? "Submitting…" : `${tradeSide} ${tradeOrderType} order`}</button></div></form>
               </section>
             </div>
           </div>
