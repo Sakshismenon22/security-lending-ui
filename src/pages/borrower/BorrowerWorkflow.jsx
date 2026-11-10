@@ -105,6 +105,7 @@ function DataTable({ columns, rows, empty = "No records found" }) {
 export default function BorrowerWorkflow() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loanSubTab, setLoanSubTab] = useState("create");
+  const [locateSubTab, setLocateSubTab] = useState("create");
   const [orgId, setOrgId] = useState(ORG_ID);
   const [agreements, setAgreements] = useState([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState(null);
@@ -1479,90 +1480,103 @@ export default function BorrowerWorkflow() {
        )}
  
        {!loading && activeTab === "locates" && (
-         <section className="wf-content">
-           <div className="wf-section-heading">
-             <div>
-               <div className="wf-eyebrow">AVAILABILITY DISCOVERY</div>
-               <h2>Locate requests</h2>
-               <p>Ask a lender to locate a security. Availability is not displayed in this portal.</p>
-             </div>
-           </div>
-           <div className="wf-panel">
-             <h3>Create locate request</h3>
-             <form onSubmit={submitLocate}>
-               <div className="wf-form-grid">
-                 <Field label="MSLA agreement">
-                   <select required value={locateForm.agreementId}
-                    onChange={(e) => setLocateForm({ ...locateForm, agreementId: e.target.value })}>
-                     <option value="">Select agreement</option>
-                    {agreements.map((a) => (
-                       <option key={a.id} value={a.id}>
-                        {a.number || `Agreement #${a.id}`} · {a.status}
-                       </option>
-                     ))}
-                  </select>
-                 </Field>
-                 <Field label="Security">
-                   <select required value={locateForm.securityId}
-                     onChange={(e) => setLocateForm({ ...locateForm, securityId: e.target.value })}>
-                     <option value="">Select security</option>
-                     {securities.map((s) => (
-                       <option key={s.id} value={s.id}>
-                         {s.symbol} — {s.name}
-                       </option>
-                     ))}
-                   </select>
-                 </Field>
-                 <Field label="Requested quantity">
-                   <input type="number" min="1" step="1" required
-                     value={locateForm.quantity}
-                     onChange={(e) => setLocateForm({ ...locateForm, quantity: e.target.value })} />
-                 </Field>
-                 <Field label="Request expiry">
-                   <input type="datetime-local" required
-                     value={locateForm.expiresAt}
-                     onChange={(e) => setLocateForm({ ...locateForm, expiresAt: e.target.value })} />
-                 </Field>
-               </div>
-               <div className="wf-actions">
-                 <button className="wf-primary">Submit locate request</button>
-               </div>
-             </form>
-           </div>
- 
-           <div className="wf-panel">
-             <h3>Locate request register</h3>
-             <DataTable rows={locates} columns={[
-               { key: "id", label: "Request ID" },
-               {
-                 key: "agreementId",
-                 label: "Agreement",
-                 render: (r) => (
-                   r.agreementId ?? r.mslaId ?? r.msla_id ?? "—"
-                 ),
-               },
-               { key: "securityId", label: "Security ID" },
-               { key: "quantity", label: "Quantity" },
-               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-               { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
-             ]} />
-           <div className="wf-panel wf-inline-reservations">
-             <div className="wf-panel-header"><h3>Automatic reservation register</h3><span className="wf-status">{reservations.length} records</span></div>
-             <p className="wf-help">Lender-approved locate quantities are automatically submitted for reservation and confirmed against lender inventory. No separate reservation action is required.</p>
-             <DataTable rows={reservations} columns={[
-               { key: "id", label: "Reservation ID" },
-               { key: "locateId", label: "Locate ID", render: r => r.locateId ?? r.locate_id ?? "—" },
-               { key: "quantity", label: "Approved quantity" },
-               { key: "remainingQuantity", label: "Remaining quantity", render: r => r.remainingQuantity ?? r.remaining_quantity ?? "—" },
-               { key: "status", label: "Reservation status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-               { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
-             ]} />
-           </div>
-           </div>
-         </section>
-       )}
- 
-       {!loading && activeTab === "loans" && (
+        <section className="wf-content wf-operations-view wf-tabbed-workspace">
+          <div className="wf-section-heading">
+            <div>
+              <div className="wf-eyebrow">AVAILABILITY DISCOVERY</div>
+              <h2>Borrow / Locate</h2>
+              <p>Submit locate requests, monitor lender responses and review automatically generated reservations. Security availability is not exposed in this portal.</p>
+            </div>
+            <button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button>
+          </div>
+
+          <div className="wf-summary-grid">
+            <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
+            <div className="wf-summary-tile"><span>Awaiting response</span><strong>{locates.filter(item => ["PENDING", "SUBMITTED", "REQUESTED"].includes(String(item.status || "").toUpperCase())).length}</strong></div>
+            <div className="wf-summary-tile"><span>Approved locates</span><strong>{approvedLocates.length}</strong></div>
+            <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
+          </div>
+
+          <div className="wf-work-tabs" role="tablist" aria-label="Borrow and locate workspace views">
+            <button type="button" role="tab" aria-selected={locateSubTab === "create"} className={locateSubTab === "create" ? "active" : ""} onClick={() => setLocateSubTab("create")}>Create Locate Request</button>
+            <button type="button" role="tab" aria-selected={locateSubTab === "register"} className={locateSubTab === "register" ? "active" : ""} onClick={() => setLocateSubTab("register")}>Locate Request Register <span>{locates.length}</span></button>
+            <button type="button" role="tab" aria-selected={locateSubTab === "reservations"} className={locateSubTab === "reservations" ? "active" : ""} onClick={() => setLocateSubTab("reservations")}>Automatic Reservation Register <span>{reservations.length}</span></button>
+          </div>
+
+          <div className="wf-tab-panel">
+            {locateSubTab === "create" && <section className="wf-panel wf-tab-panel-card">
+              <div className="wf-panel-header"><div><h3>Create locate request</h3><small>Ask a lender to locate a security under an active MSLA.</small></div><span className="wf-status">Borrower instruction</span></div>
+              <form onSubmit={submitLocate}>
+                <div className="wf-form-grid">
+                  <Field label="MSLA agreement">
+                    <select required value={locateForm.agreementId}
+                      onChange={(e) => setLocateForm({ ...locateForm, agreementId: e.target.value })}>
+                      <option value="">Select agreement</option>
+                      {agreements.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.number || `Agreement #${a.id}`} · {a.status}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Security">
+                    <select required value={locateForm.securityId}
+                      onChange={(e) => setLocateForm({ ...locateForm, securityId: e.target.value })}>
+                      <option value="">Select security</option>
+                      {securities.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.symbol} — {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Requested quantity">
+                    <input type="number" min="1" step="1" required
+                      value={locateForm.quantity}
+                      onChange={(e) => setLocateForm({ ...locateForm, quantity: e.target.value })} />
+                  </Field>
+                  <Field label="Request expiry">
+                    <input type="datetime-local" required
+                      value={locateForm.expiresAt}
+                      onChange={(e) => setLocateForm({ ...locateForm, expiresAt: e.target.value })} />
+                  </Field>
+                </div>
+                <div className="wf-info">Submitting a locate request does not reveal lender inventory. The lender reviews availability and responds through the locate workflow.</div>
+                <div className="wf-actions">
+                  <button className="wf-primary" type="submit">Submit locate request</button>
+                </div>
+              </form>
+            </section>}
+
+            {locateSubTab === "register" && <section className="wf-panel wf-tab-panel-card">
+              <div className="wf-panel-header"><div><h3>Locate request register</h3><small>Track submitted requests and lender responses.</small></div><span className="wf-status">{locates.length} requests</span></div>
+              <DataTable rows={locates} columns={[
+                { key: "id", label: "Request ID" },
+                { key: "agreementId", label: "Agreement", render: r => r.agreementId ?? r.mslaId ?? r.msla_id ?? "—" },
+                { key: "securityId", label: "Security ID" },
+                { key: "quantity", label: "Requested quantity" },
+                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
+              ]} empty="No locate requests have been submitted." />
+            </section>}
+
+            {locateSubTab === "reservations" && <section className="wf-panel wf-tab-panel-card">
+              <div className="wf-panel-header"><div><h3>Automatic reservation register</h3><small>Reservations created after lender approval of locate requests.</small></div><span className="wf-status">{reservations.length} records</span></div>
+              <p className="wf-help">Lender-approved locate quantities are automatically submitted for reservation and confirmed against lender inventory. No separate reservation action is required.</p>
+              <DataTable rows={reservations} columns={[
+                { key: "id", label: "Reservation ID" },
+                { key: "locateId", label: "Locate ID", render: r => r.locateId ?? r.locate_id ?? "—" },
+                { key: "quantity", label: "Approved quantity" },
+                { key: "remainingQuantity", label: "Remaining quantity", render: r => r.remainingQuantity ?? r.remaining_quantity ?? "—" },
+                { key: "status", label: "Reservation status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
+              ]} empty="No automatic reservations have been created yet." />
+            </section>}
+          </div>
+        </section>
+      )}
+
+      {!loading && activeTab === "loans" && (
          <section className="wf-content">
            <div className="wf-section-heading">
              <div>
