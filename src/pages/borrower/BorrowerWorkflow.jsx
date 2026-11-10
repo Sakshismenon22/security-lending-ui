@@ -497,8 +497,7 @@ export default function BorrowerWorkflow() {
     setPledgingCallId(call.id);
     try {
       await postData(`${base}/margin-calls/${call.id}/collateral`, payload);
-      showNotice("success", `Collateral response submitted for margin call #${call.id}.`);
-      await loadAll();
+      showNotice("success", `Collateral response submitted for margin call #${call.id}.`);      await loadAll();
     } catch (error) {
       showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to submit collateral for this margin call.");
     } finally {
@@ -526,7 +525,6 @@ export default function BorrowerWorkflow() {
         showNotice("success", `Return request submitted for loan #${loan.id}. Outstanding quantity changes only after settlement confirmation.`);
       }
       await loadAll();
-      e.currentTarget.reset();
     } catch (error) {
       showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to submit the return request.");
     } finally {
@@ -997,8 +995,7 @@ export default function BorrowerWorkflow() {
                           onChange={(e) => updateRule(index, "securityId", e.target.value)}>
                           <option value="">Select security</option>
                           {securities.map((s) => (
-                            <option key={s.id} value={s.id}>{s.symbol || s.name || `Security #${s.id}`}</option>
-                          ))}
+                            <option key={s.id} value={s.id}>{s.symbol || s.name || `Security #${s.id}`}</option>                          ))}
                         </select>
                       ) : (
                         <input value="Cash collateral" readOnly />                      )}
@@ -1401,7 +1398,7 @@ export default function BorrowerWorkflow() {
                    <tr className={loanExpanded ? "wf-selected-row" : ""}>
                      <td><strong>#{loan.id}</strong></td><td>{loan.securityId ?? loan.security_id ?? "—"}</td><td>{loan.quantity ?? "—"}</td><td><strong>{outstanding}</strong></td>
                      <td><span className="wf-status">{status}</span></td><td>{formatDate(loan.settledAt ?? loan.settled_at ?? loan.settledOn ?? loan.settled_on)}</td><td>{formatDate(loan.closedAt ?? loan.closed_at)}</td>
-                     <td><button type="button" className="wf-icon-button" title="View lifecycle" onClick={() => setExpandedLoanId(loanExpanded ? null : String(loan.id))}>{loanExpanded ? "▾" : "▸"}</button></td>
+                     <td><div className="wf-row-actions"><button type="button" className="wf-icon-button" title="View lifecycle" aria-label={`View lifecycle for loan ${loan.id}`} onClick={() => setExpandedLoanId(loanExpanded ? null : String(loan.id))}>{loanExpanded ? "▾" : "▸"}</button><button type="button" className="wf-icon-button" title="View loan details" aria-label={`View loan ${loan.id} details`} onClick={() => setDetailView({type:"LOAN",record:loan})}>◉</button></div></td>
                    </tr>
                    {loanExpanded && <tr className="wf-expanded-row"><td colSpan={8}><div className="wf-expanded-content">
                      <div className="wf-child-header"><h3>Loan #{loan.id} lifecycle</h3><span>{outstanding} units outstanding</span></div>
@@ -1497,8 +1494,7 @@ export default function BorrowerWorkflow() {
                        { key: "rebateRate", label: "Rebate rate", render: r => { const rate = r.rebateRate ?? r.rebate_rate ?? r.rate; return rate == null ? "—" : `${(Number(rate) * 100).toFixed(4)}%`; } },
                        { key: "amount", label: "Accrued rebate", render: r => money(r.amount) },
                        { key: "accrualDate", label: "Accrual date", render: r => formatDate(r.accrualDate ?? r.accrual_date) },
-                       { key: "nextPaymentDate", label: "Next payment", render: r => formatDate(r.nextPaymentDate ?? r.paymentDate ?? r.payment_date) },
-                       { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                       { key: "nextPaymentDate", label: "Next payment", render: r => formatDate(r.nextPaymentDate ?? r.paymentDate ?? r.payment_date) },                       { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
                      ]} empty="Cash collateral is posted. Rebate accrual has not been reported yet." />
                    </>}
                  </div>
