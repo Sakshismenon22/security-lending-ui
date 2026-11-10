@@ -439,3 +439,13 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-security-search { width: 100%; }
   .wf-securities-table-wrap { max-height: 55vh; }
 }
+
+
+/* Live quote, estimated trade value and available account cash */
+.wf-account-balance { display: flex; flex-direction: column; gap: 5px; margin: 12px 0 4px; padding: 12px; border: 1px solid #dcebe5; border-radius: 6px; background: #f3faf6; }
+.wf-account-balance span, .wf-order-estimate span { color: #708477; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.wf-account-balance strong { color: #087b60; font-size: 20px; font-variant-numeric: tabular-nums; }
+.wf-order-estimate { margin-top: 12px; padding: 12px; border: 1px solid #e0e8ef; border-radius: 6px; background: #f7f9fb; }
+.wf-order-estimate > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wf-order-estimate strong { color: #183650; font-size: 17px; font-variant-numeric: tabular-nums; }
+.wf-order-estimate small { display: block; margin-top: 5px; color: #8290a0; font-size: 9px; }
