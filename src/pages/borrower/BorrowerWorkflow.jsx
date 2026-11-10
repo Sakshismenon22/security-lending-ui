@@ -104,7 +104,7 @@ function DataTable({ columns, rows, empty = "No records found" }) {
  
 export default function BorrowerWorkflow() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [loanSubTab, setLoanSubTab] = useState("register");
+  const [loanSubTab, setLoanSubTab] = useState("create");
   const [orgId, setOrgId] = useState(ORG_ID);
   const [agreements, setAgreements] = useState([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState(null);
@@ -497,8 +497,7 @@ export default function BorrowerWorkflow() {
       cashAmount: assetType === "CASH" ? Number(form.get("cashAmount") || 0) : 0,
       marginCallId: call.id,
     };
-    if ((assetType === "CASH" && payload.cashAmount <= 0) ||
-        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");
+    if ((assetType === "CASH" && payload.cashAmount <= 0) ||        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");
       return;
     }
     setPledgingCallId(call.id);
@@ -997,8 +996,7 @@ export default function BorrowerWorkflow() {
                   <h3>{selectedAgreement.displayNumber}</h3>
                   <span className="wf-status">{selectedAgreement.status}</span>
                 </div>
-                {selectedAgreementLoans.length ? (
-                  <div className="wf-table-wrap">
+                {selectedAgreementLoans.length ? (                  <div className="wf-table-wrap">
                     <table className="wf-table">
                       <thead>
                         <tr>
@@ -1276,8 +1274,16 @@ export default function BorrowerWorkflow() {
               <p>Submit a loan request against confirmed reserved securities.</p>
              </div>
            </div>
- 
-           <div className="wf-panel">
+
+           <div className="wf-panel wf-loan-tabs">
+             <div className="wf-tab-actions" role="tablist" aria-label="Loan workspace sections">
+               <button type="button" role="tab" aria-selected={loanSubTab === "create"} className={loanSubTab === "create" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("create")}>Create Loan</button>
+               <button type="button" role="tab" aria-selected={loanSubTab === "register"} className={loanSubTab === "register" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("register")}>Loan Register</button>
+               <button type="button" role="tab" aria-selected={loanSubTab === "margin"} className={loanSubTab === "margin" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("margin")}>Margin Calls & Rebates <span className="wf-status">{marginCalls.length}</span></button>
+             </div>
+           </div>
+
+           {loanSubTab === "create" && <div className="wf-panel">
              <h3>Loan request details</h3>
              <form onSubmit={submitLoan}>
                <div className="wf-form-grid">
@@ -1339,29 +1345,28 @@ export default function BorrowerWorkflow() {
                  <button className="wf-primary">Submit loan request</button>
                </div>
              </form>
-           </div>
- 
-           <div className="wf-panel">
-             <div className="wf-panel-header">
-               <h3>Loan workspace</h3>
+           </div>}
+
+           {loanSubTab === "register" && <div className="wf-panel">
+             <h3>Loan register</h3>
+             <DataTable rows={loans} columns={[
+               { key: "id", label: "Loan ID" },
+               { key: "reservationId", label: "Reservation" },
+               { key: "securityId", label: "Security ID" },
+               { key: "quantity", label: "Quantity" },
+               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+               { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt) },
+             ]} />
+           </div>}
+
+           {loanSubTab === "margin" && <div className="wf-panel">
+             <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3>
                <div className="wf-tab-actions" role="tablist" aria-label="Loan workspace sections">
                  <button type="button" role="tab" aria-selected={loanSubTab === "register"} className={loanSubTab === "register" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("register")}>Loan register</button>
                  <button type="button" role="tab" aria-selected={loanSubTab === "margin"} className={loanSubTab === "margin" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("margin")}>Margin calls & rebates <span className="wf-status">{marginCalls.length}</span></button>
                </div>
              </div>
            </div>
-
-           {loanSubTab === "register" && <div className="wf-panel">
-             <h3>Loan register</h3>
-            <DataTable rows={loans} columns={[
-              { key: "id", label: "Loan ID" },
-              { key: "reservationId", label: "Reservation" },
-              { key: "securityId", label: "Security ID" },
-              { key: "quantity", label: "Quantity" },
-              { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-              { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt) },
-            ]} />
-           </div>}
 
            {loanSubTab === "margin" && <div className="wf-panel">
              <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
