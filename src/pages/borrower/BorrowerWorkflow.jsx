@@ -112,6 +112,10 @@ export default function BorrowerWorkflow() {
   const [locates, setLocates] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [recalls, setRecalls] = useState([]);
+  const [loanReturns, setLoanReturns] = useState([]);
+  const [returnSubmitting, setReturnSubmitting] = useState(null);
+  const [expandedLoanId, setExpandedLoanId] = useState(null);
   const [marginCalls, setMarginCalls] = useState([]);
   const [rebates, setRebates] = useState([]);
   const [collateralPositions, setCollateralPositions] = useState([]);
@@ -169,6 +173,8 @@ export default function BorrowerWorkflow() {
         { key: "locates", call: getData(`${base}/locates`) },
         { key: "reservations", call: getData(`${base}/reservations`) },
         { key: "loans", call: getData(`${base}/loans`) },
+        { key: "recalls", call: getData(`${base}/recalls`) },
+        { key: "loanReturns", call: getData(`${base}/returns`) },
         { key: "marginCalls", call: getData(`${base}/margin-calls`) },
         { key: "rebates", call: getData(`${base}/rebates`) },
         { key: "collateralPositions", call: getData(`${base}/collateral`) },
@@ -185,6 +191,8 @@ export default function BorrowerWorkflow() {
         locates: [],
         reservations: [],
         loans: [],
+        recalls: [],
+        loanReturns: [],
         marginCalls: [],
         rebates: [],
         collateralPositions: [],
@@ -217,6 +225,8 @@ export default function BorrowerWorkflow() {
       setLocates(nextState.locates);
       setReservations(nextState.reservations);
       setLoans(nextState.loans);
+      setRecalls(nextState.recalls);
+      setLoanReturns(nextState.loanReturns);
       setMarginCalls(nextState.marginCalls);
       setRebates(nextState.rebates);
       setCollateralPositions(nextState.collateralPositions);
@@ -496,9 +506,36 @@ export default function BorrowerWorkflow() {
     }
   }
 
+  async function submitLoanReturn(e, loan, recall = null) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const quantity = Number(form.get("quantity"));
+    const outstanding = Number(loan.outstandingQuantity ?? loan.outstanding_quantity ?? loan.quantity ?? 0);
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > outstanding) {
+      showNotice("error", `Enter a whole-number return quantity up to the outstanding quantity (${outstanding}).`);
+      return;
+    }
+    const key = recall ? `recall-${recall.id}` : `loan-${loan.id}`;
+    setReturnSubmitting(key);
+    try {
+      if (recall) {
+        await postData(`${base}/recalls/${recall.id}/returns`, { quantity, recallId: Number(recall.id) });
+        showNotice("success", `Return request submitted against recall #${recall.id}. Fulfilment will update after external confirmation.`);
+      } else {
+        await postData(`${base}/loans/${loan.id}/returns`, { quantity });
+        showNotice("success", `Return request submitted for loan #${loan.id}. Outstanding quantity changes only after settlement confirmation.`);
+      }
+      await loadAll();
+      e.currentTarget.reset();
+    } catch (error) {
+      showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to submit the return request.");
+    } finally {
+      setReturnSubmitting(null);
+    }
+  }
+
   async function submitLoan(e) {
-    e.preventDefault(); 
-    const collateral = loanForm.assetType === "CASH"
+    e.preventDefault();     const collateral = loanForm.assetType === "CASH"
       ? [{
           assetType: "CASH",
           securityId: null,
@@ -587,6 +624,7 @@ export default function BorrowerWorkflow() {
             <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
+            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")}><span className="wf-nav-icon">↩</span><span>Recalls & Returns</span></button>
             <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")}><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
           </nav>
           <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
@@ -795,6 +833,50 @@ export default function BorrowerWorkflow() {
         </section>
       )}
 
+      {!loading && activeTab === "recalls" && (
+        <section className="wf-content wf-recalls-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">LOAN OBLIGATIONS</div><h2>Recalls & Returns</h2><p>Review lender-issued recalls and submit return instructions against the affected loans.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
+          <div className="wf-summary-grid">
+            <div className="wf-summary-tile"><span>Total recalls</span><strong>{recalls.length}</strong></div>
+            <div className="wf-summary-tile"><span>Open recalls</span><strong>{recalls.filter(r=>!["FULFILLED","CANCELLED"].includes(String(r.status||"").toUpperCase())).length}</strong></div>
+            <div className="wf-summary-tile"><span>Outstanding recall units</span><strong>{recalls.reduce((sum,r)=>sum+Math.max(0,Number(r.quantity||0)-Number(r.fulfilledQuantity??r.fulfilled_quantity??0)),0).toLocaleString("en-IN")}</strong></div>
+            <div className="wf-summary-tile"><span>Return requests</span><strong>{loanReturns.length}</strong></div>
+          </div>
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Incoming recall register</h3><span className="wf-status">{recalls.length} records</span></div>
+            <p className="wf-help">Recall records are read-only projections from the lender/lifecycle owner. Submitting a return does not itself mark a recall fulfilled.</p>
+            <div className="wf-table-wrap"><table className="wf-table">
+              <thead><tr><th>Recall ID</th><th>Loan</th><th>Reason</th><th>Recall quantity</th><th>Fulfilled</th><th>Outstanding</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody>{recalls.length ? recalls.map(recall=>{
+                const loan=loans.find(item=>String(item.id)===String(recall.loanId??recall.loan_id));
+                const fulfilled=Number(recall.fulfilledQuantity??recall.fulfilled_quantity??0);
+                const outstanding=Math.max(0,Number(recall.quantity||0)-fulfilled);
+                const canRespond=outstanding>0 && !["FULFILLED","CANCELLED"].includes(String(recall.status||"").toUpperCase());
+                return <Fragment key={recall.id}>
+                  <tr><td><strong>{recall.externalId??recall.external_id??recall.id}</strong></td><td>#{recall.loanId??recall.loan_id??"—"}</td><td>{recall.reason||"—"}</td><td>{recall.quantity??"—"}</td><td>{fulfilled}</td><td><strong>{outstanding}</strong></td><td>{formatDate(recall.dueAt??recall.due_at)}</td><td><span className="wf-status">{recall.status||"—"}</span></td></tr>
+                  {canRespond && <tr className="wf-expanded-row"><td colSpan={8}><form className="wf-expanded-content wf-inline-form" onSubmit={e=>submitLoanReturn(e,loan,recall)}>
+                    <div className="wf-subheading"><div><h4>Return against recall #{recall.id}</h4><p>Loan #{recall.loanId??recall.loan_id} · {outstanding} units remain to be fulfilled.</p></div></div>
+                    <div className="wf-form-grid"><Field label={`Return quantity (max ${outstanding})`}><input name="quantity" type="number" min="1" max={outstanding} step="1" required /></Field></div>
+                    <div className="wf-actions"><button className="wf-primary" type="submit" disabled={!loan || returnSubmitting===`recall-${recall.id}`}>{returnSubmitting===`recall-${recall.id}`?"Submitting…":"Submit recall return"}</button></div>
+                    {!loan && <small className="wf-help">The associated loan record is not currently available; refresh the workspace before responding.</small>}
+                  </form></td></tr>}
+                </Fragment>;
+              }) : <tr><td colSpan={8} className="wf-empty">No recall notices have been received.</td></tr>}</tbody>
+            </table></div>
+          </div>
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Return instruction history</h3><span className="wf-status">{loanReturns.length} requests</span></div>
+            <DataTable rows={loanReturns} columns={[
+              {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
+              {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},{key:"quantity",label:"Quantity"},
+              {key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>},
+              {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
+              {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
+            ]} empty="No return instructions have been submitted." />
+          </div>
+        </section>
+      )}
+
       {loading && <div className="wf-loading">Loading workspace...</div>}
 
       {!loading && activeTab === "msla" && (
@@ -997,8 +1079,7 @@ export default function BorrowerWorkflow() {
              </div>
            </div>
             <div className="wf-panel">
-             <h3>New MSLA proposal</h3>
-  <form onSubmit={submitAgreement}>
+             <h3>New MSLA proposal</h3>  <form onSubmit={submitAgreement}>
                <div className="wf-form-grid">
                  <Field label="Lender">
                    <select required value={agreementForm.lenderId}
@@ -1305,16 +1386,55 @@ export default function BorrowerWorkflow() {
            </div>}
 
            {loanSubTab === "register" && <div className="wf-panel">
-             <div className="wf-panel-header"><h3>Loan register</h3><span className="wf-status">{loans.length} loans</span></div>
-             <DataTable rows={loans} columns={[
-               { key: "id", label: "Loan ID" },
-               { key: "reservationId", label: "Reservation", render: r => r.reservationId ?? r.reservation_id ?? "—" },
-               { key: "securityId", label: "Security ID", render: r => r.securityId ?? r.security_id ?? "—" },
-               { key: "quantity", label: "Quantity" },
-               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-               { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt ?? r.created_at) },
-               { key: "actions", label: "Action", render: r => <button type="button" className="wf-icon-button" title="View loan details" aria-label={`View loan ${r.id} details`} onClick={() => setDetailView({type:"LOAN",record:r})}>◉</button> },
-             ]} />
+             <div className="wf-panel-header"><h3>Loan register & lifecycle</h3><span className="wf-status">{loans.length} loans</span></div>
+             <p className="wf-help">Track each loan from request through settlement, partial returns and closure. Returns remain pending until the lifecycle owner confirms settlement.</p>
+             <div className="wf-table-wrap"><table className="wf-table">
+               <thead><tr><th>Loan ID</th><th>Security</th><th>Requested</th><th>Outstanding</th><th>Status</th><th>Settled</th><th>Closed</th><th>Details</th></tr></thead>
+               <tbody>{loans.length ? loans.map(loan => {
+                 const outstanding = Number(loan.outstandingQuantity ?? loan.outstanding_quantity ?? loan.quantity ?? 0);
+                 const loanExpanded = String(expandedLoanId) === String(loan.id);
+                 const history = loanReturns.filter(item => String(item.loanId ?? item.loan_id) === String(loan.id));
+                 const loanRecalls = recalls.filter(item => String(item.loanId ?? item.loan_id) === String(loan.id));
+                 const status = String(loan.status || "PENDING").toUpperCase();
+                 const canReturn = outstanding > 0 && !["PENDING", "REQUESTED", "REJECTED", "CLOSED", "CANCELLED"].includes(status);
+                 return <Fragment key={loan.id}>
+                   <tr className={loanExpanded ? "wf-selected-row" : ""}>
+                     <td><strong>#{loan.id}</strong></td><td>{loan.securityId ?? loan.security_id ?? "—"}</td><td>{loan.quantity ?? "—"}</td><td><strong>{outstanding}</strong></td>
+                     <td><span className="wf-status">{status}</span></td><td>{formatDate(loan.settledAt ?? loan.settled_at ?? loan.settledOn ?? loan.settled_on)}</td><td>{formatDate(loan.closedAt ?? loan.closed_at)}</td>
+                     <td><button type="button" className="wf-icon-button" title="View lifecycle" onClick={() => setExpandedLoanId(loanExpanded ? null : String(loan.id))}>{loanExpanded ? "▾" : "▸"}</button></td>
+                   </tr>
+                   {loanExpanded && <tr className="wf-expanded-row"><td colSpan={8}><div className="wf-expanded-content">
+                     <div className="wf-child-header"><h3>Loan #{loan.id} lifecycle</h3><span>{outstanding} units outstanding</span></div>
+                     <div className="wf-lifecycle-track">
+                       {[
+                         ["REQUESTED", true],
+                         ["SETTLED", Boolean(loan.settledAt ?? loan.settled_at ?? ["SETTLED","ACTIVE","PARTIALLY_RETURNED","CLOSED"].includes(status))],
+                         ["RETURN IN PROGRESS", history.some(item => ["REQUESTED","PENDING","IN_PROGRESS"].includes(String(item.status || "").toUpperCase()))],
+                         ["CLOSED", status === "CLOSED" || outstanding === 0],
+                       ].map(([label,done],index) => <div className={done ? "wf-lifecycle-step complete" : "wf-lifecycle-step"} key={label}><span>{done ? "✓" : index+1}</span><strong>{label}</strong></div>)}
+                     </div>
+                     <div className="wf-summary-grid">
+                       <div className="wf-summary-tile"><span>Original quantity</span><strong>{Number(loan.quantity || 0).toLocaleString("en-IN")}</strong></div>
+                       <div className="wf-summary-tile"><span>Outstanding</span><strong>{outstanding.toLocaleString("en-IN")}</strong></div>
+                       <div className="wf-summary-tile"><span>Return requests</span><strong>{history.length}</strong></div>
+                       <div className="wf-summary-tile"><span>Open recalls</span><strong>{loanRecalls.filter(item => !["FULFILLED","CANCELLED"].includes(String(item.status || "").toUpperCase())).length}</strong></div>
+                     </div>
+                     <h4>Return history</h4>
+                     <DataTable rows={history} columns={[
+                       {key:"id",label:"Return ID"},{key:"quantity",label:"Quantity"},{key:"recallId",label:"Recall",render:r=>r.recallId ?? r.recall_id ?? "—"},
+                       {key:"status",label:"Status",render:r=><span className="wf-status">{r.status || "—"}</span>},
+                       {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt ?? r.requested_at)},
+                       {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt ?? r.settled_at)}
+                     ]} empty="No return requests have been submitted for this loan." />
+                     {canReturn && <form className="wf-inline-form" onSubmit={e => submitLoanReturn(e,loan)}>
+                       <div className="wf-subheading"><div><h4>Initiate partial or full return</h4><p>Submit a return instruction. The outstanding quantity is updated only after confirmation.</p></div></div>
+                       <div className="wf-form-grid"><Field label={`Return quantity (max ${outstanding})`}><input name="quantity" type="number" min="1" max={outstanding} step="1" required /></Field></div>
+                       <div className="wf-actions"><button className="wf-primary" type="submit" disabled={returnSubmitting === `loan-${loan.id}`}>{returnSubmitting === `loan-${loan.id}` ? "Submitting…" : "Submit return request"}</button></div>
+                     </form>}
+                   </div></td></tr>}
+                 </Fragment>;
+               }) : <tr><td colSpan={8} className="wf-empty">No loan records available.</td></tr>}</tbody>
+             </table></div>
            </div>}
 
            {loanSubTab === "margin" && <div className="wf-panel">
