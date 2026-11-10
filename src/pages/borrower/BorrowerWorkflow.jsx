@@ -342,10 +342,14 @@ export default function BorrowerWorkflow() {
         ...(tradeOrderType === "LIMIT" ? { limitPrice: Number(tradeLimitPrice) } : {}),
       };
       const order = await postData(`${base}/orders`, payload);
-      const refreshedAccount = await getData(`${base}/account`);
+      const [refreshedAccount, refreshedHoldings] = await Promise.all([
+        getData(`${base}/account`),
+        getData(`${base}/holdings`),
+      ]);
       setAccount(refreshedAccount && typeof refreshedAccount === "object"
         ? (refreshedAccount.account ?? refreshedAccount)
         : null);
+      setHoldings(rowsOf(refreshedHoldings));
       const status = String(order?.status ?? "").toUpperCase();
       if (status === "FILLED") {
         showNotice("success", `${tradeSide} order filled at ${money(order.averagePrice ?? order.executionPrice ?? currentTradePrice)}. Available balance refreshed.`);
