@@ -477,19 +477,6 @@ export default function BorrowerWorkflow() {
         <div className={`wf-notice ${notice.type}`}>{notice.message}</div>
       )}
  
-      <nav className="wf-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={activeTab === tab.id ? "active" : ""}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <span>{tab.number}</span>
-            {tab.label}
-          </button>
-        ))}
-      </nav>
- 
       {loading && <div className="wf-loading">Loading workspace...</div>}
 
       {!loading && activeTab === "msla" && (
