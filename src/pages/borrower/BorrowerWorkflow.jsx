@@ -497,8 +497,7 @@ export default function BorrowerWorkflow() {
       cashAmount: assetType === "CASH" ? Number(form.get("cashAmount") || 0) : 0,
       marginCallId: call.id,
     };
-    if ((assetType === "CASH" && payload.cashAmount <= 0) ||        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");
-      return;
+    if ((assetType === "CASH" && payload.cashAmount <= 0) ||        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");      return;
     }
     setPledgingCallId(call.id);
     try {
@@ -997,8 +996,7 @@ export default function BorrowerWorkflow() {
                   <span className="wf-status">{selectedAgreement.status}</span>
                 </div>
                 {selectedAgreementLoans.length ? (                  <div className="wf-table-wrap">
-                    <table className="wf-table">
-                      <thead>
+                    <table className="wf-table">                      <thead>
                         <tr>
                           <th>Loan ID</th>
                           <th>Reservation</th>
@@ -1358,15 +1356,6 @@ export default function BorrowerWorkflow() {
                { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt) },
              ]} />
            </div>}
-
-           {loanSubTab === "margin" && <div className="wf-panel">
-             <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3>
-               <div className="wf-tab-actions" role="tablist" aria-label="Loan workspace sections">
-                 <button type="button" role="tab" aria-selected={loanSubTab === "register"} className={loanSubTab === "register" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("register")}>Loan register</button>
-                 <button type="button" role="tab" aria-selected={loanSubTab === "margin"} className={loanSubTab === "margin" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("margin")}>Margin calls & rebates <span className="wf-status">{marginCalls.length}</span></button>
-               </div>
-             </div>
-           </div>
 
            {loanSubTab === "margin" && <div className="wf-panel">
              <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
