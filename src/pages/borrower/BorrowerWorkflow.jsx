@@ -447,8 +447,7 @@ export default function BorrowerWorkflow() {
       feeRate: Number(agreementForm.feeRate),
       rebateRate: Number(agreementForm.rebateRate),
       coverageRatio: Number(agreementForm.coverageRatio),
-      dayBasis: Number(agreementForm.dayBasis),      marginHours: Number(agreementForm.marginHours),
-      recallHours: Number(agreementForm.recallHours),
+      dayBasis: Number(agreementForm.dayBasis),      marginHours: Number(agreementForm.marginHours),      recallHours: Number(agreementForm.recallHours),
       collateralRules: agreementForm.collateralRules.map((r) => ({
         assetType: r.assetType,
         securityId: r.assetType === "SECURITY" ? Number(r.securityId) : null,
@@ -560,7 +559,6 @@ export default function BorrowerWorkflow() {
       await postData(`${base}/loans/${loanId}/collateral`, payload);
       showNotice("success", "Collateral pledge request submitted. The position remains pending until confirmed.");
       await loadAll();
-      e.currentTarget.reset();
     } catch (error) {
       showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to submit collateral.");
     } finally {
@@ -897,8 +895,7 @@ export default function BorrowerWorkflow() {
                 <div className="wf-account-balance"><span>Available cash balance</span><strong>{money(account?.available)}</strong></div>
                 <div className="wf-trade-switch"><button type="button" className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button type="button" className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
                 <form onSubmit={submitTrade}><div className="wf-form-grid">
-                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
-                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
+                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
                   {tradeOrderType === "LIMIT" && <Field label="Limit price"><input type="number" min="0.000001" step="0.01" required value={tradeLimitPrice} onChange={e=>setTradeLimitPrice(e.target.value)} placeholder="Enter limit price"/></Field>}
                   <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
                   <Field label="Position source"><select value={tradeSource} onChange={e=>setTradeSource(e.target.value)}><option value="OWNED">Owned position / cash</option><option value="BORROWED">Borrowed position / short cover</option></select></Field>
@@ -1347,8 +1344,7 @@ export default function BorrowerWorkflow() {
                      value={agreementForm.creditLimit}
                     onChange={(e) => updateAgreement("creditLimit", e.target.value)} />
                 </Field>
-                 <Field label="Fee rate (decimal)">
-                   <input type="number" min="0" max="1" step="0.0001" required
+                 <Field label="Fee rate (decimal)">                   <input type="number" min="0" max="1" step="0.0001" required
                      value={agreementForm.feeRate}
                      onChange={(e) => updateAgreement("feeRate", e.target.value)} />
                  </Field>
