@@ -418,3 +418,24 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-trading-main { grid-template-columns: 1fr; }
   .wf-watchlist-items { max-height: 240px; }
 }
+
+
+/* Securities directory and watchlist management */
+.wf-securities-view { min-height: 0; }
+.wf-securities-panel { display: flex; flex-direction: column; min-height: 0; }
+.wf-securities-toolbar { flex-wrap: wrap; margin-bottom: 12px; }
+.wf-security-search { width: min(340px, 100%); min-height: 36px; padding: 0 11px; border: 1px solid #dce5ec; border-radius: 5px; color: #243e56; background: #fff; font-size: 10px; }
+.wf-securities-table-wrap { max-height: none; flex: 1; min-height: 180px; }
+.wf-add-watch, .wf-watch-added { min-height: 28px; min-width: 78px; padding: 0 9px; border-radius: 4px; font-size: 9px; font-weight: 800; }
+.wf-add-watch { border: 1px solid #a9dfcb; color: #087b60; background: #effaf5; cursor: pointer; }
+.wf-add-watch:hover { background: #dff5eb; border-color: #70cba8; }
+.wf-add-watch:disabled { opacity: .55; cursor: wait; }
+.wf-watch-added { border: 1px solid #dce8e2; color: #648477; background: #f3f7f5; cursor: default; }
+@media (min-width: 621px) {
+  .wf-securities-view { display: flex; flex-direction: column; overflow: hidden; }
+  .wf-securities-panel { flex: 1; overflow: hidden; }
+}
+@media (max-width: 620px) {
+  .wf-security-search { width: 100%; }
+  .wf-securities-table-wrap { max-height: 55vh; }
+}
