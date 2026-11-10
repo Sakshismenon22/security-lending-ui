@@ -110,6 +110,10 @@ export default function BorrowerWorkflow() {
   const [locates, setLocates] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [marginCalls, setMarginCalls] = useState([]);
+  const [rebates, setRebates] = useState([]);
+  const [collateralPositions, setCollateralPositions] = useState([]);
+  const [pledgingCallId, setPledgingCallId] = useState(null);
   const [lenders, setLenders] = useState([]);
   const [securities, setSecurities] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
@@ -163,6 +167,9 @@ export default function BorrowerWorkflow() {
         { key: "locates", call: getData(`${base}/locates`) },
         { key: "reservations", call: getData(`${base}/reservations`) },
         { key: "loans", call: getData(`${base}/loans`) },
+        { key: "marginCalls", call: getData(`${base}/margin-calls`) },
+        { key: "rebates", call: getData(`${base}/rebates`) },
+        { key: "collateralPositions", call: getData(`${base}/collateral`) },
         { key: "lenders", call: getData(`${base}/lenders`) },
         { key: "securities", call: getData("/securities") },
         { key: "watchlist", call: getData(`${base}/watchlist`) },
@@ -176,6 +183,9 @@ export default function BorrowerWorkflow() {
         locates: [],
         reservations: [],
         loans: [],
+        marginCalls: [],
+        rebates: [],
+        collateralPositions: [],
         lenders: [],
         securities: [],
         watchlist: [],
@@ -205,6 +215,9 @@ export default function BorrowerWorkflow() {
       setLocates(nextState.locates);
       setReservations(nextState.reservations);
       setLoans(nextState.loans);
+      setMarginCalls(nextState.marginCalls);
+      setRebates(nextState.rebates);
+      setCollateralPositions(nextState.collateralPositions);
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
       setWatchlist(nextState.watchlist);
@@ -447,8 +460,7 @@ export default function BorrowerWorkflow() {
       showNotice("success", "Locate request submitted.");
       setLocateForm(emptyLocate);
       await loadAll();
-    } catch (error) {
-      showNotice("error", error.response?.data?.detail ||
+    } catch (error) {      showNotice("error", error.response?.data?.detail ||
         error.response?.data?.message || "Locate request failed.");
     }
   }
@@ -473,6 +485,34 @@ export default function BorrowerWorkflow() {
     }
   }
  
+  async function respondToMarginCall(e, call) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const assetType = String(form.get("assetType") || "CASH").toUpperCase();
+    const payload = {
+      assetType,
+      securityId: assetType === "SECURITY" && form.get("securityId") ? Number(form.get("securityId")) : null,
+      quantity: assetType === "SECURITY" ? Number(form.get("quantity") || 0) : 0,
+      cashAmount: assetType === "CASH" ? Number(form.get("cashAmount") || 0) : 0,
+      marginCallId: call.id,
+    };
+    if ((assetType === "CASH" && payload.cashAmount <= 0) ||
+        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {
+      showNotice("error", "Enter a valid cash amount or security and quantity.");
+      return;
+    }
+    setPledgingCallId(call.id);
+    try {
+      await postData(`${base}/margin-calls/${call.id}/collateral`, payload);
+      showNotice("success", `Collateral response submitted for margin call #${call.id}.`);
+      await loadAll();
+    } catch (error) {
+      showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to submit collateral for this margin call.");
+    } finally {
+      setPledgingCallId(null);
+    }
+  }
+
   async function submitLoan(e) {
     e.preventDefault();
  
@@ -897,8 +937,7 @@ export default function BorrowerWorkflow() {
                           ))}
                         </select>
                       ) : (
-                        <input value="Cash collateral" readOnly />
-                      )}
+                        <input value="Cash collateral" readOnly />                      )}
                     </Field>
                     <Field label="Haircut">
                       <input type="number" min="0" max="100" step="0.01"
@@ -1313,6 +1352,75 @@ export default function BorrowerWorkflow() {
               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
               { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt) },
             ]} />
+           </div>
+
+           <div className="wf-panel">
+             <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
+             <p className="wf-help">Margin calls are raised by the lender's valuation process. Respond against the specific loan by pledging eligible cash or securities.</p>
+             {loans.length ? loans.map((loan) => {
+               const loanKey = String(loan.id);
+               const loanCalls = marginCalls.filter(call => String(call.loanId ?? call.loan_id) === loanKey);
+               const loanCollateral = collateralPositions.filter(position => String(position.loanId ?? position.loan_id) === loanKey);
+               const loanRebates = rebates.filter(rebate => String(rebate.loanId ?? rebate.loan_id) === loanKey);
+               const cashPosted = loanCollateral.some(position =>
+                 String(position.assetType ?? position.asset_type ?? "").toUpperCase() === "CASH" &&
+                 ["POSTED", "CONFIRMED", "ACTIVE"].includes(String(position.status || "").toUpperCase())
+               );
+               const agreementId = loan.mslaId ?? loan.agreementId ?? loan.msla_id;
+               const agreement = agreements.find(item => String(item.id) === String(agreementId));
+               const rebateRecord = loanRebates.find(item => item.rebateRate != null || item.rebate_rate != null || item.rate != null);
+               const rebateRate = rebateRecord?.rebateRate ?? rebateRecord?.rebate_rate ?? rebateRecord?.rate ?? agreement?.rebateRate;
+               return (
+                 <div className="wf-selected-panel" key={loan.id}>
+                   <div className="wf-selected-header"><h3>Loan #{loan.id}</h3><span className="wf-status">{loan.status || "—"}</span></div>
+                   <div className="wf-form-grid">
+                     <div><small>Margin calls</small><strong>{loanCalls.length}</strong></div>
+                     <div><small>Collateral positions</small><strong>{loanCollateral.length}</strong></div>
+                     <div><small>Cash collateral rebate</small><strong>{cashPosted && rebateRate != null ? `${(Number(rebateRate) * 100).toFixed(4)}%` : cashPosted ? "Rate pending" : "Not applicable"}</strong></div>
+                   </div>
+                   <h4>Margin calls for this loan</h4>
+                   <DataTable rows={loanCalls} columns={[
+                     { key: "id", label: "Call ID" },
+                     { key: "amount", label: "Call amount", render: r => money(r.amount) },
+                     { key: "fulfilledAmount", label: "Fulfilled", render: r => money(r.fulfilledAmount ?? r.fulfilled_amount) },
+                     { key: "reason", label: "Reason" },
+                     { key: "dueAt", label: "Due", render: r => formatDate(r.dueAt ?? r.due_at) },
+                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                   ]} empty="No margin calls have been raised for this loan." />
+                   {loanCalls.filter(call => ["OPEN", "PARTIALLY_FULFILLED", "OVERDUE"].includes(String(call.status || "").toUpperCase())).map(call => (
+                     <form className="wf-inline-form" key={call.id} onSubmit={e => respondToMarginCall(e, call)}>
+                       <div className="wf-subheading"><div><h4>Respond to margin call #{call.id}</h4><p>Outstanding call amount: {money(Math.max(0, Number(call.amount || 0) - Number(call.fulfilledAmount ?? call.fulfilled_amount ?? 0)))}</p></div></div>
+                       <div className="wf-form-grid">
+                         <Field label="Collateral asset type"><select name="assetType" defaultValue="CASH"><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
+                         <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" placeholder="Enter cash amount" /></Field>
+                         <Field label="Security"><select name="securityId" defaultValue=""><option value="">Select security</option>{securities.map(security => <option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
+                         <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" /></Field>
+                       </div>
+                       <div className="wf-actions"><button className="wf-primary" type="submit" disabled={pledgingCallId === call.id}>{pledgingCallId === call.id ? "Submitting…" : "Submit collateral response"}</button></div>
+                     </form>
+                   ))}
+                   <h4>Collateral positions</h4>
+                   <DataTable rows={loanCollateral} columns={[
+                     { key: "id", label: "Position ID" },
+                     { key: "assetType", label: "Type", render: r => r.assetType ?? r.asset_type ?? "—" },
+                     { key: "securityId", label: "Security", render: r => r.securityId ?? r.security_id ?? "Cash" },
+                     { key: "quantity", label: "Quantity" },
+                     { key: "cashAmount", label: "Cash amount", render: r => r.cashAmount != null ? money(r.cashAmount) : "—" },
+                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                   ]} empty="No collateral positions recorded for this loan." />
+                   {cashPosted && <>
+                     <h4>Cash collateral rebate</h4>
+                     <DataTable rows={loanRebates} columns={[
+                       { key: "rebateRate", label: "Rebate rate", render: r => { const rate = r.rebateRate ?? r.rebate_rate ?? r.rate; return rate == null ? "—" : `${(Number(rate) * 100).toFixed(4)}%`; } },
+                       { key: "amount", label: "Accrued rebate", render: r => money(r.amount) },
+                       { key: "accrualDate", label: "Accrual date", render: r => formatDate(r.accrualDate ?? r.accrual_date) },
+                       { key: "nextPaymentDate", label: "Next payment", render: r => formatDate(r.nextPaymentDate ?? r.paymentDate ?? r.payment_date) },
+                       { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                     ]} empty="Cash collateral is posted. Rebate accrual has not been reported yet." />
+                   </>}
+                 </div>
+               );
+             }) : <div className="wf-empty-state">Margin calls and collateral will appear here once loans are created.</div>}
            </div>
          </section>
       )}
