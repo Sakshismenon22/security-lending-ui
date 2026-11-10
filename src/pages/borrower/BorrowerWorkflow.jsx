@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getData, postData } from "../../api/borrowerApi";
+import { getData, postData, putData } from "../../api/borrowerApi";
 import "./BorrowerWorkflow.css";
 
 const ORG_ID = "";
@@ -112,7 +112,7 @@ export default function BorrowerWorkflow() {
   const [loans, setLoans] = useState([]);
   const [lenders, setLenders] = useState([]);
   const [securities, setSecurities] = useState([]);
-  const [watchlist, setWatchlist] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);\n  const [addingSecurityId, setAddingSecurityId] = useState(null);
   const [selectedTradeSecurity, setSelectedTradeSecurity] = useState(null);
   const [securityHistory, setSecurityHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -257,6 +257,27 @@ export default function BorrowerWorkflow() {
     });
   }, [loans, selectedAgreement]);
  
+  function isInWatchlist(security) {
+    return watchlist.some((item) =>
+      String(item.securityId ?? item.security?.id ?? item.id) === String(security.id)
+    );
+  }
+
+  async function addToWatchlist(security) {
+    if (!security?.id || isInWatchlist(security)) return;
+    setAddingSecurityId(security.id);
+    try {
+      await putData(`${base}/watchlist/${security.id}`);
+      const updated = await getData(`${base}/watchlist`);
+      setWatchlist(rowsOf(updated));
+      showNotice("success", `${security.symbol ?? security.name ?? "Security"} added to your watchlist.`);
+    } catch (error) {
+      showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Unable to add security to watchlist.");
+    } finally {
+      setAddingSecurityId(null);
+    }
+  }
+
   async function selectTradeSecurity(security) {
     setSelectedTradeSecurity(security);
     setSecurityHistory([]);
@@ -479,7 +500,7 @@ export default function BorrowerWorkflow() {
           <div className="wf-sidebar-label">BORROWER WORKSPACE</div>
           <nav className="wf-side-nav" aria-label="Borrower navigation">
             <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
-            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
+            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>\n            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
             <button className={activeTab === "reservations" ? "active" : ""} onClick={() => setActiveTab("reservations")}><span className="wf-nav-icon">◫</span><span>Reservations</span></button>
@@ -519,12 +540,51 @@ export default function BorrowerWorkflow() {
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
           <div className="wf-dashboard-grid">
-            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>\n            <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("reservations")}><span>CAPACITY</span><strong>Reservations</strong><small>Track approved locates and reservation requests</small><b>View reservations →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
           </div>
           <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid"><div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div><div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div><div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div><div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div></div></div>
+        </section>
+      )}
+
+      {!loading && activeTab === "securities" && (
+        <section className="wf-content wf-securities-view">
+          <div className="wf-section-heading">
+            <div>
+              <div className="wf-eyebrow">INSTRUMENT DIRECTORY</div>
+              <h2>Securities</h2>
+              <p>Browse available instruments and add selected securities to your watchlist.</p>
+            </div>
+          </div>
+          <section className="wf-panel wf-securities-panel">
+            <div className="wf-panel-header wf-securities-toolbar">
+              <div><h2>Available securities</h2><small>{filteredSecurities.length} instruments</small></div>
+              <input className="wf-security-search" value={securitySearch} onChange={(e) => setSecuritySearch(e.target.value)} placeholder="Search symbol or security name…" />
+            </div>
+            <div className="wf-table-wrap wf-securities-table-wrap">
+              <table className="wf-table">
+                <thead><tr><th>Symbol</th><th>Security name</th><th>Asset class</th><th>Exchange</th><th>Watchlist</th></tr></thead>
+                <tbody>
+                  {filteredSecurities.length ? filteredSecurities.map((security) => {
+                    const added = isInWatchlist(security);
+                    return <tr key={security.id}>
+                      <td><strong>{security.symbol ?? security.ticker ?? `SEC-${security.id}`}</strong></td>
+                      <td>{security.name ?? security.description ?? "—"}</td>
+                      <td>{security.assetClass ?? security.assetType ?? "—"}</td>
+                      <td>{security.exchange ?? security.market ?? "—"}</td>
+                      <td>
+                        <button type="button" className={added ? "wf-watch-added" : "wf-add-watch"} disabled={added || addingSecurityId === security.id} onClick={() => addToWatchlist(security)} aria-label={added ? "Already in watchlist" : "Add to watchlist"}>
+                          {added ? "✓ Added" : addingSecurityId === security.id ? "Adding…" : "+ Add"}
+                        </button>
+                      </td>
+                    </tr>;
+                  }) : <tr><td colSpan={5} className="wf-empty">No securities match your search.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </section>
       )}
 
