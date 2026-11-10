@@ -447,8 +447,7 @@ export default function BorrowerWorkflow() {
       feeRate: Number(agreementForm.feeRate),
       rebateRate: Number(agreementForm.rebateRate),
       coverageRatio: Number(agreementForm.coverageRatio),
-      dayBasis: Number(agreementForm.dayBasis),
-      marginHours: Number(agreementForm.marginHours),
+      dayBasis: Number(agreementForm.dayBasis),      marginHours: Number(agreementForm.marginHours),
       recallHours: Number(agreementForm.recallHours),
       collateralRules: agreementForm.collateralRules.map((r) => ({
         assetType: r.assetType,
@@ -702,7 +701,8 @@ export default function BorrowerWorkflow() {
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
             <button className={activeTab === "collateral" ? "active" : ""} onClick={() => setActiveTab("collateral")}><span className="wf-nav-icon">⬡</span><span>Collateral</span></button>
-            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")}><span className="wf-nav-icon">↩</span><span>Recalls & Returns</span></button>
+            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")}><span className="wf-nav-icon">↩</span><span>Recall Management</span></button>
+            <button className={activeTab === "settlements" ? "active" : ""} onClick={() => setActiveTab("settlements")}><span className="wf-nav-icon">⇥</span><span>Settlements & Returns</span></button>
             <div className="wf-nav-group-label">OPERATIONS & FINANCE</div>
             <button className={activeTab === "billing" ? "active" : ""} onClick={() => setActiveTab("billing")}><span className="wf-nav-icon">₹</span><span>Billing & Statements</span></button>
             <button className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}><span className="wf-nav-icon">♢</span><span>Notifications <em className="wf-nav-count">{notifications.filter(n => !(n.isRead ?? n.read)).length}</em></span></button>
@@ -897,8 +897,7 @@ export default function BorrowerWorkflow() {
                 <div className="wf-account-balance"><span>Available cash balance</span><strong>{money(account?.available)}</strong></div>
                 <div className="wf-trade-switch"><button type="button" className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button type="button" className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
                 <form onSubmit={submitTrade}><div className="wf-form-grid">
-                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>
-                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
+                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
                   <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
                   {tradeOrderType === "LIMIT" && <Field label="Limit price"><input type="number" min="0.000001" step="0.01" required value={tradeLimitPrice} onChange={e=>setTradeLimitPrice(e.target.value)} placeholder="Enter limit price"/></Field>}
                   <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
@@ -1036,6 +1035,39 @@ export default function BorrowerWorkflow() {
             <a className="wf-primary wf-statement-link" href={`${import.meta.env.VITE_BORROWER_API}${base}/statement.csv`} target="_blank" rel="noreferrer">Download CSV statement ↓</a>
           </div>
           <div className="wf-info">Fee bills, daily accruals, rebate calculations and payment confirmations are read-only financial projections. Their owning services determine amounts and settlement; the borrower workspace does not recalculate them.</div>
+        </section>
+      )}
+
+      {!loading && activeTab === "settlements" && (
+        <section className="wf-content wf-operations-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">POST-TRADE OPERATIONS</div><h2>Settlements & Returns</h2><p>Monitor return instructions, settlement confirmations and outstanding borrowed quantities.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
+          <div className="wf-summary-grid">
+            <div className="wf-summary-tile"><span>Total return instructions</span><strong>{loanReturns.length}</strong></div>
+            <div className="wf-summary-tile"><span>Awaiting confirmation</span><strong>{loanReturns.filter(r=>["REQUESTED","PENDING","IN_PROGRESS"].includes(String(r.status||"").toUpperCase())).length}</strong></div>
+            <div className="wf-summary-tile"><span>Settled returns</span><strong>{loanReturns.filter(r=>String(r.status||"").toUpperCase()==="SETTLED").length}</strong></div>
+            <div className="wf-summary-tile"><span>Outstanding borrowed units</span><strong>{loans.reduce((sum,l)=>sum+Number(l.outstandingQuantity??l.outstanding_quantity??0),0).toLocaleString("en-IN")}</strong></div>
+          </div>
+          <div className="wf-panel"><div className="wf-panel-header"><h3>Return settlement register</h3><span className="wf-status">{loanReturns.length} instructions</span></div>
+            <DataTable rows={loanReturns} columns={[
+              {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
+              {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},
+              {key:"quantity",label:"Quantity"},{key:"status",label:"Settlement status",render:r=><span className="wf-status">{r.status||"—"}</span>},
+              {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
+              {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
+            ]} empty="No return instructions have been submitted." />
+          </div>
+          <div className="wf-panel"><div className="wf-panel-header"><h3>Initiate a loan return</h3><span className="wf-status">Partial or full</span></div>
+            <div className="wf-return-loan-grid">{loans.filter(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase())).map(loan=>{
+              const outstanding=Number(loan.outstandingQuantity??loan.outstanding_quantity??loan.quantity??0);
+              return <form className="wf-return-loan-card" key={loan.id} onSubmit={e=>submitLoanReturn(e,loan)}>
+                <div><strong>Loan #{loan.id}</strong><span className="wf-status">{loan.status||"—"}</span></div>
+                <p>Security #{loan.securityId??loan.security_id??"—"} · {outstanding.toLocaleString("en-IN")} units outstanding</p>
+                <Field label="Return quantity"><input name="quantity" type="number" min="1" max={outstanding} step="1" required placeholder={`Maximum ${outstanding}`}/></Field>
+                <button className="wf-primary" type="submit" disabled={returnSubmitting===`loan-${loan.id}`}>{returnSubmitting===`loan-${loan.id}`?"Submitting…":"Submit return instruction"}</button>
+              </form>;
+            })}{!loans.some(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase()))&&<div className="wf-empty-state">There are no settled loans with outstanding quantities eligible for return.</div>}</div>
+          </div>
+          <div className="wf-info">Return instructions are not proof of settlement. Borrowed quantities are reduced only when the external settlement owner publishes a return confirmation.</div>
         </section>
       )}
 
@@ -1347,8 +1379,7 @@ export default function BorrowerWorkflow() {
                  <Field label="Margin response (hours)">
                    <input type="number" min="1" value={agreementForm.marginHours}
                      onChange={(e) => updateAgreement("marginHours", e.target.value)} />
-                 </Field>
-                 <Field label="Recall response (hours)">
+                 </Field>                 <Field label="Recall response (hours)">
                   <input type="number" min="1" value={agreementForm.recallHours}
                      onChange={(e) => updateAgreement("recallHours", e.target.value)} />
                  </Field>
