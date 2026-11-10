@@ -112,12 +112,18 @@ export default function BorrowerWorkflow() {
   const [loans, setLoans] = useState([]);
   const [lenders, setLenders] = useState([]);
   const [securities, setSecurities] = useState([]);
-  const [watchlist, setWatchlist] = useState([]);\n  const [addingSecurityId, setAddingSecurityId] = useState(null);
+  const [watchlist, setWatchlist] = useState([]);
+  const [addingSecurityId, setAddingSecurityId] = useState(null);
   const [selectedTradeSecurity, setSelectedTradeSecurity] = useState(null);
   const [securityHistory, setSecurityHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [tradeSide, setTradeSide] = useState("BUY");
-  const [tradeQuantity, setTradeQuantity] = useState("");\n  const [tradeOrderType, setTradeOrderType] = useState("MARKET");\n  const [tradeLimitPrice, setTradeLimitPrice] = useState("");\n  const [tradeSource, setTradeSource] = useState("OWNED");\n  const [account, setAccount] = useState(null);\n  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [tradeQuantity, setTradeQuantity] = useState("");
+  const [tradeOrderType, setTradeOrderType] = useState("MARKET");
+  const [tradeLimitPrice, setTradeLimitPrice] = useState("");
+  const [tradeSource, setTradeSource] = useState("OWNED");
+  const [account, setAccount] = useState(null);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
  
   const [agreementForm, setAgreementForm] = useState(emptyAgreement);
   const [isCreatingAgreement, setIsCreatingAgreement] = useState(false);
@@ -158,7 +164,8 @@ export default function BorrowerWorkflow() {
         { key: "loans", call: getData(`${base}/loans`) },
         { key: "lenders", call: getData(`${base}/lenders`) },
         { key: "securities", call: getData("/securities") },
-        { key: "watchlist", call: getData(`${base}/watchlist`) },\n        { key: "account", call: getData(`${base}/account`) },
+        { key: "watchlist", call: getData(`${base}/watchlist`) },
+        { key: "account", call: getData(`${base}/account`) },
       ];
 
       const results = await Promise.allSettled(requests.map((request) => request.call));
@@ -197,7 +204,8 @@ export default function BorrowerWorkflow() {
       setLoans(nextState.loans);
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
-      setWatchlist(nextState.watchlist);\n      setAccount(nextState.account);
+      setWatchlist(nextState.watchlist);
+      setAccount(nextState.account);
     } catch (error) {
       showNotice("error", error.response?.data?.detail ||
         error.response?.data?.message || "Unable to load borrower data.");
@@ -537,7 +545,8 @@ export default function BorrowerWorkflow() {
           <div className="wf-sidebar-label">BORROWER WORKSPACE</div>
           <nav className="wf-side-nav" aria-label="Borrower navigation">
             <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
-            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>\n            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
+            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
+            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
             <button className={activeTab === "reservations" ? "active" : ""} onClick={() => setActiveTab("reservations")}><span className="wf-nav-icon">◫</span><span>Reservations</span></button>
@@ -577,7 +586,8 @@ export default function BorrowerWorkflow() {
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
           <div className="wf-dashboard-grid">
-            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>\n            <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("reservations")}><span>CAPACITY</span><strong>Reservations</strong><small>Track approved locates and reservation requests</small><b>View reservations →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
