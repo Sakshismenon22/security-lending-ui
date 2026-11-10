@@ -436,7 +436,20 @@ export default function BorrowerWorkflow() {
           </button>
         </div>
       </header>
- 
+
+      <div className="wf-workspace">
+        <aside className="wf-sidebar">
+          <div className="wf-brand"><span className="wf-brand-mark">M</span><span className="wf-brand-copy"><strong>MERIDIAN</strong><small>SECURITIES FINANCE</small></span></div>
+          <div className="wf-sidebar-label">BORROWER WORKSPACE</div>
+          <nav className="wf-side-nav" aria-label="Borrower navigation">
+            <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
+            <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
+            <button className={activeTab === "reservations" ? "active" : ""} onClick={() => setActiveTab("reservations")}><span className="wf-nav-icon">◫</span><span>Reservations</span></button>
+            <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")}><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
+          </nav>
+          <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
+        </aside>
+        <div className="wf-main-content">
       <section className="wf-metrics">
         <div className="wf-metric">
           <span>Active agreements</span>
@@ -1063,7 +1076,8 @@ export default function BorrowerWorkflow() {
            </div>
          </section>
       )}
+        </div>
+      </div>
      </main>
    );
  }
-
