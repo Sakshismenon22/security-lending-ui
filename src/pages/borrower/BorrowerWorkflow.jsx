@@ -106,6 +106,8 @@ export default function BorrowerWorkflow() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loanSubTab, setLoanSubTab] = useState("create");
   const [locateSubTab, setLocateSubTab] = useState("create");
+  const [expandedLocateId, setExpandedLocateId] = useState(null);
+  const [marginAssetTypes, setMarginAssetTypes] = useState({});
   const [orgId, setOrgId] = useState(ORG_ID);
   const [agreements, setAgreements] = useState([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState(null);
@@ -1550,14 +1552,39 @@ export default function BorrowerWorkflow() {
 
             {locateSubTab === "register" && <section className="wf-panel wf-tab-panel-card">
               <div className="wf-panel-header"><div><h3>Locate request register</h3><small>Track submitted requests and lender responses.</small></div><span className="wf-status">{locates.length} requests</span></div>
-              <DataTable rows={locates} columns={[
-                { key: "id", label: "Request ID" },
-                { key: "agreementId", label: "Agreement", render: r => r.agreementId ?? r.mslaId ?? r.msla_id ?? "—" },
-                { key: "securityId", label: "Security ID" },
-                { key: "quantity", label: "Requested quantity" },
-                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
-              ]} empty="No locate requests have been submitted." />
+              <div className="wf-table-wrap"><table className="wf-table">
+                <thead><tr><th>Request ID</th><th>Agreement</th><th>Security</th><th>Requested quantity</th><th>Locate status</th><th>Expires</th><th>Lifecycle</th></tr></thead>
+                <tbody>{locates.length ? locates.map(locate => {
+                  const status = String(locate.status || "SUBMITTED").toUpperCase();
+                  const locateExpanded = String(expandedLocateId) === String(locate.id);
+                  const steps = [
+                    { label: "Submitted", done: true },
+                    { label: "Under review", done: ["UNDER_REVIEW","IN_REVIEW","APPROVED","PARTIALLY_APPROVED","REJECTED"].includes(status) },
+                    { label: status === "REJECTED" ? "Rejected" : "Decision", done: ["APPROVED","PARTIALLY_APPROVED","REJECTED"].includes(status) },
+                    { label: "Reservation", done: reservations.some(item => String(item.locateId ?? item.locate_id ?? item.locateRequestId) === String(locate.id)) },
+                  ];
+                  const relatedReservation = reservations.find(item => String(item.locateId ?? item.locate_id ?? item.locateRequestId) === String(locate.id));
+                  return <Fragment key={locate.id}>
+                    <tr className={locateExpanded ? "wf-selected-row" : ""}>
+                      <td><strong>#{locate.id}</strong></td><td>{locate.agreementId ?? locate.mslaId ?? locate.msla_id ?? "—"}</td>
+                      <td>{locate.securityId ?? locate.security_id ?? "—"}</td><td>{locate.quantity ?? "—"}</td>
+                      <td><span className="wf-status">{status.replaceAll("_"," ")}</span></td><td>{formatDate(locate.expiresAt ?? locate.expires_at)}</td>
+                      <td><button type="button" className="wf-small-button" onClick={() => setExpandedLocateId(locateExpanded ? null : String(locate.id))}>{locateExpanded ? "Hide" : "Track status"}</button></td>
+                    </tr>
+                    {locateExpanded && <tr className="wf-expanded-row"><td colSpan={7}><div className="wf-expanded-content">
+                      <div className="wf-child-header"><h3>Locate request #{locate.id}</h3><span>{locate.quantity ?? "—"} units requested</span></div>
+                      <div className="wf-lifecycle-track">{steps.map((step,index) => <div key={step.label} className={step.done ? "wf-lifecycle-step complete" : "wf-lifecycle-step"}><span>{step.done ? "✓" : index+1}</span><strong>{step.label}</strong></div>)}</div>
+                      <div className="wf-summary-grid">
+                        <div className="wf-summary-tile"><span>Requested quantity</span><strong>{Number(locate.quantity || 0).toLocaleString("en-IN")}</strong></div>
+                        <div className="wf-summary-tile"><span>Approved quantity</span><strong>{locate.approvedQuantity ?? locate.approved_quantity ?? relatedReservation?.quantity ?? "—"}</strong></div>
+                        <div className="wf-summary-tile"><span>Reservation</span><strong>{relatedReservation ? `#${relatedReservation.id} · ${relatedReservation.status || "Pending"}` : "Awaiting lender decision"}</strong></div>
+                        <div className="wf-summary-tile"><span>Decision note</span><strong>{locate.reason ?? locate.rejectionReason ?? locate.rejection_reason ?? "—"}</strong></div>
+                      </div>
+                      <p className="wf-help">Lender inventory and available quantities remain confidential. This timeline shows only the response and reservation outcome for your request.</p>
+                    </div></td></tr>}
+                  </Fragment>;
+                }) : <tr><td colSpan={7} className="wf-empty">No locate requests have been submitted.</td></tr>}</tbody>
+              </table></div>
             </section>}
 
             {locateSubTab === "reservations" && <section className="wf-panel wf-tab-panel-card">
@@ -1679,10 +1706,10 @@ export default function BorrowerWorkflow() {
                      <div className="wf-child-header"><h3>Loan #{loan.id} lifecycle</h3><span>{outstanding} units outstanding</span></div>
                      <div className="wf-lifecycle-track">
                        {[
-                         ["REQUESTED", true],
-                         ["SETTLED", Boolean(loan.settledAt ?? loan.settled_at ?? ["SETTLED","ACTIVE","PARTIALLY_RETURNED","CLOSED"].includes(status))],
-                         ["RETURN IN PROGRESS", history.some(item => ["REQUESTED","PENDING","IN_PROGRESS"].includes(String(item.status || "").toUpperCase()))],
-                         ["CLOSED", status === "CLOSED" || outstanding === 0],
+                         ["REQUESTED", ["REQUESTED","PENDING","SETTLED","ACTIVE","RETURN_IN_PROGRESS","PARTIALLY_RETURNED","CLOSED","FULLY_RETURNED"].includes(status)],
+                         ["SETTLED", Boolean(loan.settledAt ?? loan.settled_at ?? ["SETTLED","ACTIVE","RETURN_IN_PROGRESS","PARTIALLY_RETURNED","CLOSED","FULLY_RETURNED"].includes(status))],
+                         ["RETURN IN PROGRESS", ["RETURN_IN_PROGRESS","PARTIALLY_RETURNED"].includes(status) || history.some(item => ["REQUESTED","PENDING","IN_PROGRESS","SUBMITTED"].includes(String(item.status || "").toUpperCase()))],
+                         ["CLOSED", ["CLOSED","FULLY_RETURNED"].includes(status) || outstanding === 0],
                        ].map(([label,done],index) => <div className={done ? "wf-lifecycle-step complete" : "wf-lifecycle-step"} key={label}><span>{done ? "✓" : index+1}</span><strong>{label}</strong></div>)}
                      </div>
                      <div className="wf-summary-grid">
@@ -1712,6 +1739,12 @@ export default function BorrowerWorkflow() {
            {loanSubTab === "margin" && <div className="wf-panel">
              <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
              <p className="wf-help">Margin calls are raised by the lender's valuation process. Respond against the specific loan by pledging eligible cash or securities.</p>
+             <div className="wf-summary-grid wf-margin-summary">
+               <div className="wf-summary-tile"><span>Open / overdue</span><strong>{marginCalls.filter(call => ["OPEN","PARTIALLY_FULFILLED","OVERDUE"].includes(String(call.status || "").toUpperCase())).length}</strong></div>
+               <div className="wf-summary-tile"><span>Fully fulfilled</span><strong>{marginCalls.filter(call => ["FULFILLED","CLOSED","SATISFIED"].includes(String(call.status || "").toUpperCase())).length}</strong></div>
+               <div className="wf-summary-tile"><span>Total calls</span><strong>{marginCalls.length}</strong></div>
+               <div className="wf-summary-tile"><span>Responses pending</span><strong>{collateralPositions.filter(position => ["PENDING","SUBMITTED","PENDING_CONFIRMATION"].includes(String(position.status || "").toUpperCase())).length}</strong></div>
+             </div>
              {loans.length ? loans.map((loan) => {
                const loanKey = String(loan.id);
                const loanCalls = marginCalls.filter(call => String(call.loanId ?? call.loan_id) === loanKey);
@@ -1746,10 +1779,10 @@ export default function BorrowerWorkflow() {
                      <form className="wf-inline-form" key={call.id} onSubmit={e => respondToMarginCall(e, call)}>
                        <div className="wf-subheading"><div><h4>Respond to margin call #{call.id}</h4><p>Outstanding call amount: {money(Math.max(0, Number(call.amount || 0) - Number(call.fulfilledAmount ?? call.fulfilled_amount ?? 0)))}</p></div></div>
                        <div className="wf-form-grid">
-                         <Field label="Collateral asset type"><select name="assetType" defaultValue="CASH"><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
-                         <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" placeholder="Enter cash amount" /></Field>
-                         <Field label="Security"><select name="securityId" defaultValue=""><option value="">Select security</option>{securities.map(security => <option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
-                         <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" /></Field>
+                         <Field label="Collateral asset type"><select name="assetType" value={marginAssetTypes[call.id] || "CASH"} onChange={e => setMarginAssetTypes(current => ({ ...current, [call.id]: e.target.value }))}><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
+                         <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" disabled={(marginAssetTypes[call.id] || "CASH") !== "CASH"} required={(marginAssetTypes[call.id] || "CASH") === "CASH"} placeholder="Enter cash amount" /></Field>
+                         <Field label="Security"><select name="securityId" defaultValue="" disabled={(marginAssetTypes[call.id] || "CASH") !== "SECURITY"} required={(marginAssetTypes[call.id] || "CASH") === "SECURITY"}><option value="">Select security</option>{securities.map(security => <option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
+                         <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" disabled={(marginAssetTypes[call.id] || "CASH") !== "SECURITY"} required={(marginAssetTypes[call.id] || "CASH") === "SECURITY"} /></Field>
                        </div>
                        <div className="wf-actions"><button className="wf-primary" type="submit" disabled={pledgingCallId === call.id}>{pledgingCallId === call.id ? "Submitting…" : "Submit collateral response"}</button></div>
                      </form>
