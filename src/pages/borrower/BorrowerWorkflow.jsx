@@ -565,7 +565,6 @@ export default function BorrowerWorkflow() {
             <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
-            <button className={activeTab === "reservations" ? "active" : ""} onClick={() => setActiveTab("reservations")}><span className="wf-nav-icon">◫</span><span>Reservations</span></button>
             <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")}><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
           </nav>
           <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
@@ -605,7 +604,6 @@ export default function BorrowerWorkflow() {
             <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
-            <button className="wf-dashboard-card" onClick={() => setActiveTab("reservations")}><span>CAPACITY</span><strong>Reservations</strong><small>Track approved locates and reservation requests</small><b>View reservations →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
           </div>
           <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid">
@@ -1138,7 +1136,8 @@ export default function BorrowerWorkflow() {
                { key: "number", label: "Reference" },
               { key: "lenderId", label: "Lender ID" },
                { key: "creditLimit", label: "Credit limit", render: r => money(r.creditLimit) },
-               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+               { key: "status", label: "Locate status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+               { key: "reservation", label: "Reservation", render: r => { const x = reservations.find(v => String(v.locateId ?? v.locate_id ?? v.locateRequestId) === String(r.id)); return x ? <span className="wf-status">{x.status || "—"}</span> : ["APPROVED", "PARTIALLY_APPROVED"].includes(String(r.status || "").toUpperCase()) ? "Creating automatically…" : "—"; } },
                { key: "effectiveDate", label: "Effective", render: r => formatDate(r.effectiveDate) },
                { key: "expiryDate", label: "Expiry", render: r => formatDate(r.expiryDate) },
              ]} />
@@ -1214,62 +1213,18 @@ export default function BorrowerWorkflow() {
                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
              ]} />
-           </div>
-         </section>
-       )}
- 
-       {!loading && activeTab === "reservations" && (
-         <section className="wf-content">
-           <div className="wf-section-heading">
-             <div>
-               <div className="wf-eyebrow">CAPACITY COMMITMENT</div>
-               <h2>Reservations</h2>
-               <p>Request a reservation only after the locate has been approved.</p>
-             </div>
-           </div>
- 
-           <div className="wf-panel">
-             <h3>Approved locates eligible for reservation</h3>
-             <DataTable rows={approvedLocates} columns={[
-               { key: "id", label: "Locate ID" },
-               {
-                 key: "agreementId",
-                 label: "Agreement",
-                 render: (r) => (
-                   r.agreementId ?? r.mslaId ?? r.msla_id ?? "—"
-                 ),
-               },
-               { key: "securityId", label: "Security ID" },
-               { key: "quantity", label: "Approved quantity", render: r => r.approvedQuantity ?? r.quantity },
-               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status}</span> },
-               { key: "action", label: "Action", render: r => (
-                 <button className="wf-small-button" onClick={() => reserveLocate(r)}>
-                   Request reservation
-                 </button>
-               )},
-             ]} />
-             {!approvedLocates.length && (
-               <p className="wf-help">Approved locate requests will appear here.</p>
-             )}
-           </div>
- 
-           <div className="wf-panel">
-             <h3>Reservation register</h3>
+           <div className="wf-panel wf-inline-reservations">
+             <div className="wf-panel-header"><h3>Automatic reservation register</h3><span className="wf-status">{reservations.length} records</span></div>
+             <p className="wf-help">Lender-approved locate quantities are automatically submitted for reservation and confirmed against lender inventory. No separate reservation action is required.</p>
              <DataTable rows={reservations} columns={[
                { key: "id", label: "Reservation ID" },
-               {
-                 key: "locateId",
-                 label: "Locate ID",
-                 render: (r) => r.locateId ?? r.locate_id ?? r.locateRequestId ?? "—",
-               },
-               {
-                 key: "requestedQuantity",
-                 label: "Requested",
-                 render: (r) => r.requestedQuantity ?? r.quantity ?? "—",
-               },
-               { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+               { key: "locateId", label: "Locate ID", render: r => r.locateId ?? r.locate_id ?? "—" },
+               { key: "quantity", label: "Approved quantity" },
+               { key: "remainingQuantity", label: "Remaining quantity", render: r => r.remainingQuantity ?? r.remaining_quantity ?? "—" },
+               { key: "status", label: "Reservation status", render: r => <span className="wf-status">{r.status || "—"}</span> },
                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
              ]} />
+           </div>
            </div>
          </section>
        )}
