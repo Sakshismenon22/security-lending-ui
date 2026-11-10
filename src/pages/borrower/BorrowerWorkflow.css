@@ -589,3 +589,11 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-notification-meta { align-items: flex-start; flex-direction: column; gap: 3px; }
   .wf-statement-panel { align-items: flex-start; flex-direction: column; }
 }
+
+.wf-return-loan-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.wf-return-loan-card { display: flex; flex-direction: column; gap: 9px; padding: 13px; border: 1px solid #e2eaf0; border-radius: 6px; background: #fbfcfd; }
+.wf-return-loan-card > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.wf-return-loan-card > div > strong { color: #173650; font-size: 11px; }
+.wf-return-loan-card p { margin: 0; color: #718295; font-size: 9px; }
+.wf-return-loan-card .wf-primary { align-self: flex-start; }
+@media (max-width: 620px) { .wf-return-loan-grid { grid-template-columns: 1fr; } }
