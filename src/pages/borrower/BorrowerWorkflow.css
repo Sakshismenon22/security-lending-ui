@@ -449,3 +449,20 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
 .wf-order-estimate > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .wf-order-estimate strong { color: #183650; font-size: 17px; font-variant-numeric: tabular-nums; }
 .wf-order-estimate small { display: block; margin-top: 5px; color: #8290a0; font-size: 9px; }
+
+
+/* My Holdings */
+.wf-holdings-view { min-width: 0; }
+.wf-holdings-summary { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.wf-holdings-panel { min-width: 0; }
+.wf-holdings-panel .wf-panel-header { align-items: flex-start; }
+.wf-holdings-panel .wf-panel-header small { display: block; margin-top: 5px; color: #8190a0; font-size: 10px; }
+.wf-holdings-table-wrap { max-height: min(58vh, 560px); }
+.wf-holdings-table-wrap .wf-table { min-width: 1050px; }
+.wf-holding-name { display: block; margin-top: 3px; color: #8795a4; font-size: 9px; }
+.wf-holding-available { color: #087b60; font-variant-numeric: tabular-nums; }
+.wf-pnl-positive { color: #087b60 !important; font-weight: 800; }
+.wf-pnl-negative { color: #b84c4c !important; font-weight: 800; }
+@media (max-width: 900px) {
+  .wf-holdings-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
