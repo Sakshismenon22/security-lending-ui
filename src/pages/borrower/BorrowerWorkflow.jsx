@@ -123,11 +123,6 @@ export default function BorrowerWorkflow() {
   const [rebatePayments, setRebatePayments] = useState([]);
   const [payments, setPayments] = useState([]);
   const [collateralSubmitting, setCollateralSubmitting] = useState(false);
-  const [collateralAssetType, setCollateralAssetType] = useState("CASH");
-  const [collateralTab, setCollateralTab] = useState("pledge");
-  const [recallTab, setRecallTab] = useState("register");
-  const [settlementTab, setSettlementTab] = useState("register");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [marginCalls, setMarginCalls] = useState([]);
   const [rebates, setRebates] = useState([]);
   const [collateralPositions, setCollateralPositions] = useState([]);
@@ -402,7 +397,8 @@ export default function BorrowerWorkflow() {
       showNotice("error", error.response?.data?.detail || error.response?.data?.message || "Order could not be submitted.");
     } finally {
       setOrderSubmitting(false);
-    }  }
+    }
+  }
 
   function showNotice(type, message) {
     setNotice({ type, message });
@@ -688,27 +684,26 @@ export default function BorrowerWorkflow() {
       </header>
 
       <div className="wf-workspace">
-        <aside className={`wf-sidebar ${sidebarCollapsed ? "is-collapsed" : ""}`}>
-          <button type="button" className="wf-sidebar-toggle" onClick={() => setSidebarCollapsed(value => !value)} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? "›" : "‹"}</button>
+        <aside className="wf-sidebar">
           <div className="wf-brand"><span className="wf-brand-mark">M</span><span className="wf-brand-copy"><strong>MERIDIAN</strong><small>SECURITIES FINANCE</small></span></div>
           <div className="wf-sidebar-label">WORKSPACE</div>
           <nav className="wf-side-nav" aria-label="Borrower navigation">
             <div className="wf-nav-group-label">OVERVIEW</div>
-            <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")} title="Dashboard"><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
+            <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
             <div className="wf-nav-group-label">MARKETS & PORTFOLIO</div>
-            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")} title="Trading"><span className="wf-nav-icon">▥</span><span>Trading</span></button>
-            <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")} title="My Holdings"><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
-            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")} title="Securities"><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
+            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
+            <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")}><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
+            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <div className="wf-nav-group-label">SECURITIES FINANCE</div>
-            <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")} title="Agreements"><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
-            <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")} title="Borrow / Locate"><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
-            <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")} title="Loans"><span className="wf-nav-icon">▣</span><span>Loans</span></button>
-            <button className={activeTab === "collateral" ? "active" : ""} onClick={() => setActiveTab("collateral")} title="Collateral"><span className="wf-nav-icon">⬡</span><span>Collateral</span></button>
-            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")} title="Recall Management"><span className="wf-nav-icon">↩</span><span>Recall Management</span></button>
-            <button className={activeTab === "settlements" ? "active" : ""} onClick={() => setActiveTab("settlements")} title="Settlements & Returns"><span className="wf-nav-icon">⇥</span><span>Settlements & Returns</span></button>
+            <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")}><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
+            <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
+            <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
+            <button className={activeTab === "collateral" ? "active" : ""} onClick={() => setActiveTab("collateral")}><span className="wf-nav-icon">⬡</span><span>Collateral</span></button>
+            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")}><span className="wf-nav-icon">↩</span><span>Recall Management</span></button>
+            <button className={activeTab === "settlements" ? "active" : ""} onClick={() => setActiveTab("settlements")}><span className="wf-nav-icon">⇥</span><span>Settlements & Returns</span></button>
             <div className="wf-nav-group-label">OPERATIONS & FINANCE</div>
-            <button className={activeTab === "billing" ? "active" : ""} onClick={() => setActiveTab("billing")} title="Billing & Statements"><span className="wf-nav-icon">₹</span><span>Billing & Statements</span></button>
-            <button className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")} title="Notifications & Alerts"><span className="wf-nav-icon">♢</span><span>Notifications <em className="wf-nav-count">{notifications.filter(n => !(n.isRead ?? n.read)).length}</em></span></button>
+            <button className={activeTab === "billing" ? "active" : ""} onClick={() => setActiveTab("billing")}><span className="wf-nav-icon">₹</span><span>Billing & Statements</span></button>
+            <button className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}><span className="wf-nav-icon">♢</span><span>Notifications <em className="wf-nav-count">{notifications.filter(n => !(n.isRead ?? n.read)).length}</em></span></button>
           </nav>
           <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
         </aside>
@@ -743,23 +738,20 @@ export default function BorrowerWorkflow() {
       {!loading && activeTab === "dashboard" && (
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
-          <section className="wf-panel wf-recent-activity">
-            <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
-            <div className="wf-summary-grid">
-              <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
-              <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
-              <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
-              <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
-              <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
-              <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
-            </div>
-          </section>
           <div className="wf-dashboard-grid">
             <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
           </div>
+          <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid">
+            <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
+            <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
+            <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
+            <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
+            <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
+            <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
+          </div></div>
         </section>
       )}
 
@@ -805,7 +797,8 @@ export default function BorrowerWorkflow() {
                       name: holding.name,
                       exchange: holding.exchange,
                       price: holding.price,
-                    };                    return <tr key={security.id}>
+                    };
+                    return <tr key={security.id}>
                       <td><strong>{holding.symbol ?? "—"}</strong><small className="wf-holding-name">{holding.name ?? "—"}</small></td>
                       <td>{owned.toLocaleString("en-IN")}</td>
                       <td>{pledged.toLocaleString("en-IN")}</td>
@@ -942,61 +935,53 @@ export default function BorrowerWorkflow() {
       )}
 
       {!loading && activeTab === "collateral" && (
-        <section className="wf-content wf-operations-view wf-tabbed-workspace">
-          <div className="wf-section-heading"><div><div className="wf-eyebrow">SECURITIES FINANCE / RISK</div><h2>Collateral Management</h2><p>Manage collateral instructions, positions and movement records.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
+        <section className="wf-content wf-operations-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">SECURITIES FINANCE / RISK</div><h2>Collateral Management</h2><p>Review pledged assets, submit additional collateral and request release of eligible positions.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
           <div className="wf-summary-grid">
             <div className="wf-summary-tile"><span>Collateral positions</span><strong>{collateralPositions.length}</strong></div>
             <div className="wf-summary-tile"><span>Cash collateral</span><strong>{money(collateralPositions.filter(p=>String(p.assetType??p.asset_type).toUpperCase()==="CASH").reduce((sum,p)=>sum+Number(p.cashAmount??p.cash_amount??0),0))}</strong></div>
             <div className="wf-summary-tile"><span>Security collateral units</span><strong>{collateralPositions.filter(p=>String(p.assetType??p.asset_type).toUpperCase()==="SECURITY").reduce((sum,p)=>sum+Number(p.quantity||0),0).toLocaleString("en-IN")}</strong></div>
             <div className="wf-summary-tile"><span>Pending positions</span><strong>{collateralPositions.filter(p=>["PENDING","REQUESTED","PLEDGE_PENDING"].includes(String(p.status||"").toUpperCase())).length}</strong></div>
           </div>
-          <div className="wf-work-tabs" role="tablist" aria-label="Collateral management views">
-            <button type="button" className={collateralTab==="pledge"?"active":""} onClick={()=>setCollateralTab("pledge")}>Submit additional collateral</button>
-            <button type="button" className={collateralTab==="positions"?"active":""} onClick={()=>setCollateralTab("positions")}>Collateral position register <span>{collateralPositions.length}</span></button>
-            <button type="button" className={collateralTab==="history"?"active":""} onClick={()=>setCollateralTab("history")}>Movement history <span>{collateralHistory.length}</span></button>
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Collateral position register</h3><span className="wf-status">{collateralPositions.length} positions</span></div>
+            <DataTable rows={collateralPositions} columns={[
+              {key:"id",label:"Position ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
+              {key:"assetType",label:"Asset",render:p=>p.assetType??p.asset_type??"—"},
+              {key:"securityId",label:"Security",render:p=>p.securityId??p.security_id??"—"},
+              {key:"quantity",label:"Quantity",render:p=>p.quantity??"—"},
+              {key:"cashAmount",label:"Cash amount",render:p=>money(p.cashAmount??p.cash_amount)},
+              {key:"haircut",label:"Haircut",render:p=>p.haircut==null?"—":`${(Number(p.haircut)*100).toFixed(2)}%`},
+              {key:"status",label:"Status",render:p=><span className="wf-status">{p.status||"—"}</span>},
+              {key:"action",label:"Action",render:p=><button type="button" className="wf-small-button" disabled={!["POSTED","CONFIRMED","ACTIVE"].includes(String(p.status||"").toUpperCase())} onClick={()=>requestCollateralRelease(p)}>Request release</button>}
+            ]} empty="No collateral positions are recorded." />
           </div>
-          <div className="wf-tab-panel">
-            {collateralTab==="pledge" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Submit additional collateral</h3><small>Submit a pledge instruction against an active loan.</small></div><span className="wf-status">Borrower instruction</span></div>
-              <form className="wf-inline-form" onSubmit={submitCollateralAllocation}>
-                <div className="wf-form-grid">
-                  <Field label="Loan"><select name="loanId" required defaultValue=""><option value="">Select loan</option>{loans.filter(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0).map(l=><option key={l.id} value={l.id}>Loan #{l.id} · {l.status}</option>)}</select></Field>
-                  <Field label="Collateral type"><select name="assetType" value={collateralAssetType} onChange={e=>setCollateralAssetType(e.target.value)}><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
-                  <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" placeholder="Enter cash amount" disabled={collateralAssetType!=="CASH"} required={collateralAssetType==="CASH"}/></Field>
-                  <Field label="Security ID"><select name="securityId" defaultValue="" disabled={collateralAssetType!=="SECURITY"} required={collateralAssetType==="SECURITY"}><option value="">Select security</option>{securities.map(s=><option key={s.id} value={s.id}>{s.symbol??s.ticker??s.id} — {s.name??"Security"}</option>)}</select></Field>
-                  <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" placeholder="Enter units" disabled={collateralAssetType!=="SECURITY"} required={collateralAssetType==="SECURITY"}/></Field>
-                </div>
-                <div className="wf-info">Only the fields relevant to the selected collateral type are enabled. Valuation, eligibility, haircut and final pledge status are confirmed by the collateral owner.</div>
-                <div className="wf-actions"><button className="wf-primary" type="submit" disabled={collateralSubmitting}>{collateralSubmitting?"Submitting…":"Submit collateral pledge"}</button></div>
-              </form>
-            </section>}
-            {collateralTab==="positions" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Collateral position register</h3><small>Current collateral positions and release eligibility.</small></div><span className="wf-status">{collateralPositions.length} positions</span></div>
-              <DataTable rows={collateralPositions} columns={[
-                {key:"id",label:"Position ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
-                {key:"assetType",label:"Asset",render:p=>p.assetType??p.asset_type??"—"},
-                {key:"securityId",label:"Security",render:p=>p.securityId??p.security_id??"—"},
-                {key:"quantity",label:"Quantity",render:p=>String(p.assetType??p.asset_type).toUpperCase()==="SECURITY"?(p.quantity??"—"):"—"},
-                {key:"cashAmount",label:"Cash amount",render:p=>String(p.assetType??p.asset_type).toUpperCase()==="CASH"?money(p.cashAmount??p.cash_amount):"—"},
-                {key:"haircut",label:"Haircut",render:p=>p.haircut==null?"—":`${(Number(p.haircut)*100).toFixed(2)}%`},
-                {key:"status",label:"Status",render:p=><span className="wf-status">{p.status||"—"}</span>},
-                {key:"action",label:"Action",render:p=><button type="button" className="wf-small-button" disabled={!["POSTED","CONFIRMED","ACTIVE"].includes(String(p.status||"").toUpperCase())} onClick={()=>requestCollateralRelease(p)}>Request release</button>}
-              ]} empty="No collateral positions are recorded." />
-            </section>}
-            {collateralTab==="history" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Collateral movement history</h3><small>Recorded pledge, adjustment and release movements.</small></div><span className="wf-status">{collateralHistory.length} movements</span></div>
-              <DataTable rows={collateralHistory} columns={[
-                {key:"id",label:"Movement ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
-                {key:"positionId",label:"Position",render:p=>p.positionId??p.position_id??"—"},
-                {key:"type",label:"Movement"},{key:"amount",label:"Amount",render:p=>money(p.amount)},
-                {key:"quantity",label:"Quantity"},{key:"createdAt",label:"Date",render:p=>formatDate(p.createdAt??p.created_at)}
-              ]} empty="No collateral movements are available." />
-            </section>}
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Submit additional collateral</h3><span className="wf-status">Borrower instruction</span></div>
+            <form className="wf-inline-form" onSubmit={submitCollateralAllocation}>
+              <div className="wf-form-grid">
+                <Field label="Loan"><select name="loanId" required defaultValue=""><option value="">Select loan</option>{loans.filter(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0).map(l=><option key={l.id} value={l.id}>Loan #{l.id} · {l.status}</option>)}</select></Field>
+                <Field label="Collateral type"><select name="assetType" defaultValue="CASH"><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
+                <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" placeholder="Enter cash amount"/></Field>
+                <Field label="Security ID"><select name="securityId" defaultValue=""><option value="">Select security (for security collateral)</option>{securities.map(s=><option key={s.id} value={s.id}>{s.symbol??s.ticker??s.id} — {s.name??"Security"}</option>)}</select></Field>
+                <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" placeholder="Enter units"/></Field>
+              </div>
+              <div className="wf-info">The request is submitted to the collateral owner. Valuation, eligibility, haircut and final pledge status are confirmed by the owning service; this screen does not calculate recognized collateral value.</div>
+              <div className="wf-actions"><button className="wf-primary" type="submit" disabled={collateralSubmitting}>{collateralSubmitting?"Submitting…":"Submit collateral pledge"}</button></div>
+            </form>
+          </div>
+          <div className="wf-panel"><div className="wf-panel-header"><h3>Collateral movement history</h3><span className="wf-status">{collateralHistory.length} movements</span></div>
+            <DataTable rows={collateralHistory} columns={[
+              {key:"id",label:"Movement ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
+              {key:"positionId",label:"Position",render:p=>p.positionId??p.position_id??"—"},
+              {key:"type",label:"Movement"},{key:"amount",label:"Amount",render:p=>money(p.amount)},
+              {key:"quantity",label:"Quantity"},{key:"createdAt",label:"Date",render:p=>formatDate(p.createdAt??p.created_at)}
+            ]} empty="No collateral movements are available." />
           </div>
         </section>
       )}
 
-{!loading && activeTab === "billing" && (
+      {!loading && activeTab === "billing" && (
         <section className="wf-content wf-operations-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">FINANCIAL OPERATIONS</div><h2>Billing & Statements</h2><p>Review lender-issued borrowing fees, rebate accruals, payment records and account statements.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
           <div className="wf-summary-grid">
@@ -1051,7 +1036,7 @@ export default function BorrowerWorkflow() {
       )}
 
       {!loading && activeTab === "settlements" && (
-        <section className="wf-content wf-operations-view wf-tabbed-workspace">
+        <section className="wf-content wf-operations-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">POST-TRADE OPERATIONS</div><h2>Settlements & Returns</h2><p>Monitor return instructions, settlement confirmations and outstanding borrowed quantities.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
           <div className="wf-summary-grid">
             <div className="wf-summary-tile"><span>Total return instructions</span><strong>{loanReturns.length}</strong></div>
@@ -1059,89 +1044,77 @@ export default function BorrowerWorkflow() {
             <div className="wf-summary-tile"><span>Settled returns</span><strong>{loanReturns.filter(r=>String(r.status||"").toUpperCase()==="SETTLED").length}</strong></div>
             <div className="wf-summary-tile"><span>Outstanding borrowed units</span><strong>{loans.reduce((sum,l)=>sum+Number(l.outstandingQuantity??l.outstanding_quantity??0),0).toLocaleString("en-IN")}</strong></div>
           </div>
-          <div className="wf-work-tabs" role="tablist" aria-label="Settlement and return views">
-            <button type="button" className={settlementTab==="register"?"active":""} onClick={()=>setSettlementTab("register")}>Return settlement register <span>{loanReturns.length}</span></button>
-            <button type="button" className={settlementTab==="initiate"?"active":""} onClick={()=>setSettlementTab("initiate")}>Initiate a loan return</button>
+          <div className="wf-panel"><div className="wf-panel-header"><h3>Return settlement register</h3><span className="wf-status">{loanReturns.length} instructions</span></div>
+            <DataTable rows={loanReturns} columns={[
+              {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
+              {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},
+              {key:"quantity",label:"Quantity"},{key:"status",label:"Settlement status",render:r=><span className="wf-status">{r.status||"—"}</span>},
+              {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
+              {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
+            ]} empty="No return instructions have been submitted." />
           </div>
-          <div className="wf-tab-panel">
-            {settlementTab==="register" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Return settlement register</h3><small>Track each return instruction through external confirmation.</small></div><span className="wf-status">{loanReturns.length} instructions</span></div>
-              <DataTable rows={loanReturns} columns={[
-                {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
-                {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},
-                {key:"quantity",label:"Quantity"},{key:"status",label:"Settlement status",render:r=><span className="wf-status">{r.status||"—"}</span>},
-                {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
-                {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
-              ]} empty="No return instructions have been submitted." />
-            </section>}
-            {settlementTab==="initiate" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Initiate a loan return</h3><small>Submit a partial or full return against an eligible loan.</small></div><span className="wf-status">Borrower instruction</span></div>
-              <div className="wf-return-loan-grid">{loans.filter(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase())).map(loan=>{
-                const outstanding=Number(loan.outstandingQuantity??loan.outstanding_quantity??loan.quantity??0);
-                return <form className="wf-return-loan-card" key={loan.id} onSubmit={e=>submitLoanReturn(e,loan)}>
-                  <div><strong>Loan #{loan.id}</strong><span className="wf-status">{loan.status||"—"}</span></div>
-                  <p>Security #{loan.securityId??loan.security_id??"—"} · {outstanding.toLocaleString("en-IN")} units outstanding</p>
-                  <Field label="Return quantity"><input name="quantity" type="number" min="1" max={outstanding} step="1" required placeholder={`Maximum ${outstanding}`}/></Field>
-                  <button className="wf-primary" type="submit" disabled={returnSubmitting===`loan-${loan.id}`}>{returnSubmitting===`loan-${loan.id}`?"Submitting…":"Submit return instruction"}</button>
-                </form>;
-              })}{!loans.some(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase()))&&<div className="wf-empty-state">There are no settled loans with outstanding quantities eligible for return.</div>}</div>
-            </section>}
+          <div className="wf-panel"><div className="wf-panel-header"><h3>Initiate a loan return</h3><span className="wf-status">Partial or full</span></div>
+            <div className="wf-return-loan-grid">{loans.filter(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase())).map(loan=>{
+              const outstanding=Number(loan.outstandingQuantity??loan.outstanding_quantity??loan.quantity??0);
+              return <form className="wf-return-loan-card" key={loan.id} onSubmit={e=>submitLoanReturn(e,loan)}>
+                <div><strong>Loan #{loan.id}</strong><span className="wf-status">{loan.status||"—"}</span></div>
+                <p>Security #{loan.securityId??loan.security_id??"—"} · {outstanding.toLocaleString("en-IN")} units outstanding</p>
+                <Field label="Return quantity"><input name="quantity" type="number" min="1" max={outstanding} step="1" required placeholder={`Maximum ${outstanding}`}/></Field>
+                <button className="wf-primary" type="submit" disabled={returnSubmitting===`loan-${loan.id}`}>{returnSubmitting===`loan-${loan.id}`?"Submitting…":"Submit return instruction"}</button>
+              </form>;
+            })}{!loans.some(l=>Number(l.outstandingQuantity??l.outstanding_quantity??l.quantity??0)>0&&!["PENDING","REQUESTED","REJECTED","CLOSED","CANCELLED"].includes(String(l.status||"").toUpperCase()))&&<div className="wf-empty-state">There are no settled loans with outstanding quantities eligible for return.</div>}</div>
           </div>
           <div className="wf-info">Return instructions are not proof of settlement. Borrowed quantities are reduced only when the external settlement owner publishes a return confirmation.</div>
         </section>
       )}
 
-{!loading && activeTab === "recalls" && (
-        <section className="wf-content wf-recalls-view wf-tabbed-workspace">
-          <div className="wf-section-heading"><div><div className="wf-eyebrow">LOAN OBLIGATIONS</div><h2>Recall Management</h2><p>Review lender-issued recall notices and track submitted return instructions.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
+      {!loading && activeTab === "recalls" && (
+        <section className="wf-content wf-recalls-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">LOAN OBLIGATIONS</div><h2>Recalls & Returns</h2><p>Review lender-issued recalls and submit return instructions against the affected loans.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
           <div className="wf-summary-grid">
             <div className="wf-summary-tile"><span>Total recalls</span><strong>{recalls.length}</strong></div>
             <div className="wf-summary-tile"><span>Open recalls</span><strong>{recalls.filter(r=>!["FULFILLED","CANCELLED"].includes(String(r.status||"").toUpperCase())).length}</strong></div>
             <div className="wf-summary-tile"><span>Outstanding recall units</span><strong>{recalls.reduce((sum,r)=>sum+Math.max(0,Number(r.quantity||0)-Number(r.fulfilledQuantity??r.fulfilled_quantity??0)),0).toLocaleString("en-IN")}</strong></div>
             <div className="wf-summary-tile"><span>Return requests</span><strong>{loanReturns.length}</strong></div>
           </div>
-          <div className="wf-work-tabs" role="tablist" aria-label="Recall management views">
-            <button type="button" className={recallTab==="register"?"active":""} onClick={()=>setRecallTab("register")}>Incoming recall register <span>{recalls.length}</span></button>
-            <button type="button" className={recallTab==="history"?"active":""} onClick={()=>setRecallTab("history")}>Return instruction history <span>{loanReturns.length}</span></button>
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Incoming recall register</h3><span className="wf-status">{recalls.length} records</span></div>
+            <p className="wf-help">Recall records are read-only projections from the lender/lifecycle owner. Submitting a return does not itself mark a recall fulfilled.</p>
+            <div className="wf-table-wrap"><table className="wf-table">
+              <thead><tr><th>Recall ID</th><th>Loan</th><th>Reason</th><th>Recall quantity</th><th>Fulfilled</th><th>Outstanding</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody>{recalls.length ? recalls.map(recall=>{
+                const loan=loans.find(item=>String(item.id)===String(recall.loanId??recall.loan_id));
+                const fulfilled=Number(recall.fulfilledQuantity??recall.fulfilled_quantity??0);
+                const outstanding=Math.max(0,Number(recall.quantity||0)-fulfilled);
+                const canRespond=outstanding>0 && !["FULFILLED","CANCELLED"].includes(String(recall.status||"").toUpperCase());
+                return <Fragment key={recall.id}>
+                  <tr><td><strong>{recall.externalId??recall.external_id??recall.id}</strong></td><td>#{recall.loanId??recall.loan_id??"—"}</td><td>{recall.reason||"—"}</td><td>{recall.quantity??"—"}</td><td>{fulfilled}</td><td><strong>{outstanding}</strong></td><td>{formatDate(recall.dueAt??recall.due_at)}</td><td><span className="wf-status">{recall.status||"—"}</span></td></tr>
+                  {canRespond && <tr className="wf-expanded-row"><td colSpan={8}><form className="wf-expanded-content wf-inline-form" onSubmit={e=>submitLoanReturn(e,loan,recall)}>
+                    <div className="wf-subheading"><div><h4>Return against recall #{recall.id}</h4><p>Loan #{recall.loanId??recall.loan_id} · {outstanding} units remain to be fulfilled.</p></div></div>
+                    <div className="wf-form-grid"><Field label={`Return quantity (max ${outstanding})`}><input name="quantity" type="number" min="1" max={outstanding} step="1" required /></Field></div>
+                    <div className="wf-actions"><button className="wf-primary" type="submit" disabled={!loan || returnSubmitting===`recall-${recall.id}`}>{returnSubmitting===`recall-${recall.id}`?"Submitting…":"Submit recall return"}</button></div>
+                    {!loan && <small className="wf-help">The associated loan record is not currently available; refresh the workspace before responding.</small>}
+                  </form></td></tr>}
+                </Fragment>;
+              }) : <tr><td colSpan={8} className="wf-empty">No recall notices have been received.</td></tr>}</tbody>
+            </table></div>
           </div>
-          <div className="wf-tab-panel">
-            {recallTab==="register" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Incoming recall register</h3><small>Respond to open recalls by submitting return quantities.</small></div><span className="wf-status">{recalls.length} records</span></div>
-              <p className="wf-help">Recall records are read-only projections from the lender/lifecycle owner. A submitted return does not itself mark a recall fulfilled.</p>
-              <div className="wf-table-wrap"><table className="wf-table">
-                <thead><tr><th>Recall ID</th><th>Loan</th><th>Reason</th><th>Recall quantity</th><th>Fulfilled</th><th>Outstanding</th><th>Due</th><th>Status / Action</th></tr></thead>
-                <tbody>{recalls.length ? recalls.map(recall=>{
-                  const loan=loans.find(item=>String(item.id)===String(recall.loanId??recall.loan_id));
-                  const fulfilled=Number(recall.fulfilledQuantity??recall.fulfilled_quantity??0);
-                  const outstanding=Math.max(0,Number(recall.quantity||0)-fulfilled);
-                  const canRespond=outstanding>0&&!["FULFILLED","CANCELLED"].includes(String(recall.status||"").toUpperCase());
-                  return <Fragment key={recall.id}>
-                    <tr><td><strong>{recall.externalId??recall.external_id??recall.id}</strong></td><td>#{recall.loanId??recall.loan_id??"—"}</td><td>{recall.reason||"—"}</td><td>{recall.quantity??"—"}</td><td>{fulfilled}</td><td><strong>{outstanding}</strong></td><td>{formatDate(recall.dueAt??recall.due_at)}</td><td><span className="wf-status">{recall.status||"—"}</span></td></tr>
-                    {canRespond && <tr className="wf-expanded-row"><td colSpan={8}><form className="wf-expanded-content wf-inline-form" onSubmit={e=>submitLoanReturn(e,loan,recall)}>
-                      <div className="wf-subheading"><div><h4>Return against recall #{recall.id}</h4><p>Loan #{recall.loanId??recall.loan_id} · {outstanding} units remain to be fulfilled.</p></div></div>
-                      <div className="wf-form-grid"><Field label={`Return quantity (max ${outstanding})`}><input name="quantity" type="number" min="1" max={outstanding} step="1" required /></Field></div>
-                      <div className="wf-actions"><button className="wf-primary" type="submit" disabled={!loan||returnSubmitting===`recall-${recall.id}`}>{returnSubmitting===`recall-${recall.id}`?"Submitting…":"Submit recall return"}</button></div>
-                      {!loan&&<small className="wf-help">Associated loan record unavailable. Refresh before responding.</small>}
-                    </form></td></tr>}
-                  </Fragment>;
-                }) : <tr><td colSpan={8} className="wf-empty">No recall notices have been received.</td></tr>}</tbody>
-              </table></div>
-            </section>}
-            {recallTab==="history" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Return instruction history</h3><small>Submitted instructions and external settlement status.</small></div><span className="wf-status">{loanReturns.length} requests</span></div>
-              <DataTable rows={loanReturns} columns={[
-                {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
-                {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},{key:"quantity",label:"Quantity"},
-                {key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>},
-                {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
-                {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
-              ]} empty="No return instructions have been submitted." />
-            </section>}
+          <div className="wf-panel">
+            <div className="wf-panel-header"><h3>Return instruction history</h3><span className="wf-status">{loanReturns.length} requests</span></div>
+            <DataTable rows={loanReturns} columns={[
+              {key:"id",label:"Return ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
+              {key:"recallId",label:"Recall",render:r=>r.recallId??r.recall_id??"—"},{key:"quantity",label:"Quantity"},
+              {key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>},
+              {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt??r.requested_at)},
+              {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt??r.settled_at)}
+            ]} empty="No return instructions have been submitted." />
           </div>
         </section>
       )}
 
-{!loading && activeTab === "msla" && (
+      {loading && <div className="wf-loading">Loading workspace...</div>}
+
+      {!loading && activeTab === "msla" && (
         <section className="wf-content wf-msla-dashboard">
           <div className="wf-panel wf-msla-grid-panel">
             <div className="wf-msla-toolbar">
@@ -1224,7 +1197,8 @@ export default function BorrowerWorkflow() {
                   </Field>
                   <Field label="Margin hours">
                     <input type="number" min="1" value={agreementForm.marginHours}
-                      onChange={(e) => updateAgreement("marginHours", e.target.value)} />                  </Field>
+                      onChange={(e) => updateAgreement("marginHours", e.target.value)} />
+                  </Field>
                   <Field label="Recall hours">
                     <input type="number" min="1" value={agreementForm.recallHours}
                       onChange={(e) => updateAgreement("recallHours", e.target.value)} />
@@ -1624,3 +1598,146 @@ export default function BorrowerWorkflow() {
                      <Field label="Collateral quantity">
                        <input type="number" min="1" required
                          value={loanForm.collateralQuantity}
+                         onChange={(e) => setLoanForm({ ...loanForm, collateralQuantity: e.target.value })} />
+                     </Field>
+                   </>
+                 )}
+               </div>
+ 
+               <div className="wf-info">
+                 Collateral is submitted as part of the loan request. The backend validates the
+                proposed allocation and creates the request; final settlement requires a separate
+                 confirmation.
+               </div>
+              <div className="wf-actions">
+                 <button className="wf-primary">Submit loan request</button>
+               </div>
+             </form>
+           </div>}
+
+           {loanSubTab === "register" && <div className="wf-panel">
+             <div className="wf-panel-header"><h3>Loan register & lifecycle</h3><span className="wf-status">{loans.length} loans</span></div>
+             <p className="wf-help">Track each loan from request through settlement, partial returns and closure. Returns remain pending until the lifecycle owner confirms settlement.</p>
+             <div className="wf-table-wrap"><table className="wf-table">
+               <thead><tr><th>Loan ID</th><th>Security</th><th>Requested</th><th>Outstanding</th><th>Status</th><th>Settled</th><th>Closed</th><th>Details</th></tr></thead>
+               <tbody>{loans.length ? loans.map(loan => {
+                 const outstanding = Number(loan.outstandingQuantity ?? loan.outstanding_quantity ?? loan.quantity ?? 0);
+                 const loanExpanded = String(expandedLoanId) === String(loan.id);
+                 const history = loanReturns.filter(item => String(item.loanId ?? item.loan_id) === String(loan.id));
+                 const loanRecalls = recalls.filter(item => String(item.loanId ?? item.loan_id) === String(loan.id));
+                 const status = String(loan.status || "PENDING").toUpperCase();
+                 const canReturn = outstanding > 0 && !["PENDING", "REQUESTED", "REJECTED", "CLOSED", "CANCELLED"].includes(status);
+                 return <Fragment key={loan.id}>
+                   <tr className={loanExpanded ? "wf-selected-row" : ""}>
+                     <td><strong>#{loan.id}</strong></td><td>{loan.securityId ?? loan.security_id ?? "—"}</td><td>{loan.quantity ?? "—"}</td><td><strong>{outstanding}</strong></td>
+                     <td><span className="wf-status">{status}</span></td><td>{formatDate(loan.settledAt ?? loan.settled_at ?? loan.settledOn ?? loan.settled_on)}</td><td>{formatDate(loan.closedAt ?? loan.closed_at)}</td>
+                     <td><div className="wf-row-actions"><button type="button" className="wf-icon-button" title="View lifecycle" aria-label={`View lifecycle for loan ${loan.id}`} onClick={() => setExpandedLoanId(loanExpanded ? null : String(loan.id))}>{loanExpanded ? "▾" : "▸"}</button><button type="button" className="wf-icon-button" title="View loan details" aria-label={`View loan ${loan.id} details`} onClick={() => setDetailView({type:"LOAN",record:loan})}>◉</button></div></td>
+                   </tr>
+                   {loanExpanded && <tr className="wf-expanded-row"><td colSpan={8}><div className="wf-expanded-content">
+                     <div className="wf-child-header"><h3>Loan #{loan.id} lifecycle</h3><span>{outstanding} units outstanding</span></div>
+                     <div className="wf-lifecycle-track">
+                       {[
+                         ["REQUESTED", true],
+                         ["SETTLED", Boolean(loan.settledAt ?? loan.settled_at ?? ["SETTLED","ACTIVE","PARTIALLY_RETURNED","CLOSED"].includes(status))],
+                         ["RETURN IN PROGRESS", history.some(item => ["REQUESTED","PENDING","IN_PROGRESS"].includes(String(item.status || "").toUpperCase()))],
+                         ["CLOSED", status === "CLOSED" || outstanding === 0],
+                       ].map(([label,done],index) => <div className={done ? "wf-lifecycle-step complete" : "wf-lifecycle-step"} key={label}><span>{done ? "✓" : index+1}</span><strong>{label}</strong></div>)}
+                     </div>
+                     <div className="wf-summary-grid">
+                       <div className="wf-summary-tile"><span>Original quantity</span><strong>{Number(loan.quantity || 0).toLocaleString("en-IN")}</strong></div>
+                       <div className="wf-summary-tile"><span>Outstanding</span><strong>{outstanding.toLocaleString("en-IN")}</strong></div>
+                       <div className="wf-summary-tile"><span>Return requests</span><strong>{history.length}</strong></div>
+                       <div className="wf-summary-tile"><span>Open recalls</span><strong>{loanRecalls.filter(item => !["FULFILLED","CANCELLED"].includes(String(item.status || "").toUpperCase())).length}</strong></div>
+                     </div>
+                     <h4>Return history</h4>
+                     <DataTable rows={history} columns={[
+                       {key:"id",label:"Return ID"},{key:"quantity",label:"Quantity"},{key:"recallId",label:"Recall",render:r=>r.recallId ?? r.recall_id ?? "—"},
+                       {key:"status",label:"Status",render:r=><span className="wf-status">{r.status || "—"}</span>},
+                       {key:"requestedAt",label:"Requested",render:r=>formatDate(r.requestedAt ?? r.requested_at)},
+                       {key:"settledAt",label:"Settled",render:r=>formatDate(r.settledAt ?? r.settled_at)}
+                     ]} empty="No return requests have been submitted for this loan." />
+                     {canReturn && <form className="wf-inline-form" onSubmit={e => submitLoanReturn(e,loan)}>
+                       <div className="wf-subheading"><div><h4>Initiate partial or full return</h4><p>Submit a return instruction. The outstanding quantity is updated only after confirmation.</p></div></div>
+                       <div className="wf-form-grid"><Field label={`Return quantity (max ${outstanding})`}><input name="quantity" type="number" min="1" max={outstanding} step="1" required /></Field></div>
+                       <div className="wf-actions"><button className="wf-primary" type="submit" disabled={returnSubmitting === `loan-${loan.id}`}>{returnSubmitting === `loan-${loan.id}` ? "Submitting…" : "Submit return request"}</button></div>
+                     </form>}
+                   </div></td></tr>}
+                 </Fragment>;
+               }) : <tr><td colSpan={8} className="wf-empty">No loan records available.</td></tr>}</tbody>
+             </table></div>
+           </div>}
+
+           {loanSubTab === "margin" && <div className="wf-panel">
+             <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
+             <p className="wf-help">Margin calls are raised by the lender's valuation process. Respond against the specific loan by pledging eligible cash or securities.</p>
+             {loans.length ? loans.map((loan) => {
+               const loanKey = String(loan.id);
+               const loanCalls = marginCalls.filter(call => String(call.loanId ?? call.loan_id) === loanKey);
+               const loanCollateral = collateralPositions.filter(position => String(position.loanId ?? position.loan_id) === loanKey);
+               const loanRebates = rebates.filter(rebate => String(rebate.loanId ?? rebate.loan_id) === loanKey);
+               const cashPosted = loanCollateral.some(position =>
+                 String(position.assetType ?? position.asset_type ?? "").toUpperCase() === "CASH" &&
+                 ["POSTED", "CONFIRMED", "ACTIVE"].includes(String(position.status || "").toUpperCase())
+               );
+               const agreementId = loan.mslaId ?? loan.agreementId ?? loan.msla_id;
+               const agreement = agreements.find(item => String(item.id) === String(agreementId));
+               const rebateRecord = loanRebates.find(item => item.rebateRate != null || item.rebate_rate != null || item.rate != null);
+               const rebateRate = rebateRecord?.rebateRate ?? rebateRecord?.rebate_rate ?? rebateRecord?.rate ?? agreement?.rebateRate;
+               return (
+                 <div className="wf-selected-panel" key={loan.id}>
+                   <div className="wf-selected-header"><h3>Loan #{loan.id}</h3><span className="wf-status">{loan.status || "—"}</span></div>
+                   <div className="wf-form-grid">
+                     <div><small>Margin calls</small><strong>{loanCalls.length}</strong></div>
+                     <div><small>Collateral positions</small><strong>{loanCollateral.length}</strong></div>
+                     <div><small>Cash collateral rebate</small><strong>{cashPosted && rebateRate != null ? `${(Number(rebateRate) * 100).toFixed(4)}%` : cashPosted ? "Rate pending" : "Not applicable"}</strong></div>
+                   </div>
+                   <h4>Margin calls for this loan</h4>
+                   <DataTable rows={loanCalls} columns={[
+                     { key: "id", label: "Call ID" },
+                     { key: "amount", label: "Call amount", render: r => money(r.amount) },
+                     { key: "fulfilledAmount", label: "Fulfilled", render: r => money(r.fulfilledAmount ?? r.fulfilled_amount) },
+                     { key: "reason", label: "Reason" },
+                     { key: "dueAt", label: "Due", render: r => formatDate(r.dueAt ?? r.due_at) },
+                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                   ]} empty="No margin calls have been raised for this loan." />
+                   {loanCalls.filter(call => ["OPEN", "PARTIALLY_FULFILLED", "OVERDUE"].includes(String(call.status || "").toUpperCase())).map(call => (
+                     <form className="wf-inline-form" key={call.id} onSubmit={e => respondToMarginCall(e, call)}>
+                       <div className="wf-subheading"><div><h4>Respond to margin call #{call.id}</h4><p>Outstanding call amount: {money(Math.max(0, Number(call.amount || 0) - Number(call.fulfilledAmount ?? call.fulfilled_amount ?? 0)))}</p></div></div>
+                       <div className="wf-form-grid">
+                         <Field label="Collateral asset type"><select name="assetType" defaultValue="CASH"><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
+                         <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" placeholder="Enter cash amount" /></Field>
+                         <Field label="Security"><select name="securityId" defaultValue=""><option value="">Select security</option>{securities.map(security => <option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
+                         <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" /></Field>
+                       </div>
+                       <div className="wf-actions"><button className="wf-primary" type="submit" disabled={pledgingCallId === call.id}>{pledgingCallId === call.id ? "Submitting…" : "Submit collateral response"}</button></div>
+                     </form>
+                   ))}
+                   <h4>Collateral positions</h4>
+                   <DataTable rows={loanCollateral} columns={[
+                     { key: "id", label: "Position ID" },
+                     { key: "assetType", label: "Type", render: r => r.assetType ?? r.asset_type ?? "—" },
+                     { key: "securityId", label: "Security", render: r => r.securityId ?? r.security_id ?? "Cash" },
+                     { key: "quantity", label: "Quantity" },
+                     { key: "cashAmount", label: "Cash amount", render: r => r.cashAmount != null ? money(r.cashAmount) : "—" },
+                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                   ]} empty="No collateral positions recorded for this loan." />
+                   {cashPosted && <>
+                     <h4>Cash collateral rebate</h4>
+                     <DataTable rows={loanRebates} columns={[
+                       { key: "rebateRate", label: "Rebate rate", render: r => { const rate = r.rebateRate ?? r.rebate_rate ?? r.rate; return rate == null ? "—" : `${(Number(rate) * 100).toFixed(4)}%`; } },
+                       { key: "amount", label: "Accrued rebate", render: r => money(r.amount) },
+                       { key: "accrualDate", label: "Accrual date", render: r => formatDate(r.accrualDate ?? r.accrual_date) },
+                       { key: "nextPaymentDate", label: "Next payment", render: r => formatDate(r.nextPaymentDate ?? r.paymentDate ?? r.payment_date) },                       { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                     ]} empty="Cash collateral is posted. Rebate accrual has not been reported yet." />
+                   </>}
+                 </div>
+               );
+             }) : <div className="wf-empty-state">Margin calls and collateral will appear here once loans are created.</div>}
+           </div>}
+         </section>
+      )}
+        </div>
+      </div>
+     </main>
+   );
+ }
