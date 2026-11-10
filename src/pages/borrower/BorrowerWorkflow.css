@@ -688,3 +688,143 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-sidebar.is-collapsed .wf-side-nav button > span:not(.wf-nav-icon) { display: inline; }
   .wf-sidebar.is-collapsed .wf-sidebar-toggle { top: 12px; right: 12px; }
 }
+
+
+/* Enterprise navigation refinement: compact, balanced and non-scrollable */
+@media (min-width: 621px) {
+  .wf-sidebar {
+    flex: 0 0 204px;
+    width: 204px;
+    min-width: 204px;
+    padding: 14px 9px 10px;
+    overflow: hidden;
+  }
+
+  .wf-brand {
+    gap: 8px;
+    padding: 0 7px 13px;
+  }
+
+  .wf-brand-mark {
+    width: 29px;
+    height: 29px;
+    flex: 0 0 29px;
+    font-size: 19px;
+  }
+
+  .wf-brand-copy strong { font-size: 12px; }
+  .wf-brand-copy small { font-size: 7px; letter-spacing: .85px; }
+
+  .wf-sidebar-label {
+    padding: 13px 9px 6px;
+    font-size: 7px;
+    letter-spacing: 1.1px;
+  }
+
+  .wf-side-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 2px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .wf-nav-group-label {
+    margin: 8px 8px 3px;
+    padding: 0;
+    font-size: 7px;
+    line-height: 1.2;
+    letter-spacing: 1px;
+  }
+
+  .wf-side-nav button {
+    min-height: 34px;
+    height: 34px;
+    gap: 9px;
+    padding: 0 9px;
+    font-size: 10px;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .wf-nav-icon {
+    width: 19px;
+    flex: 0 0 19px;
+    font-size: 16px;
+  }
+
+  .wf-nav-count {
+    margin-left: 3px;
+    font-size: 8px;
+  }
+
+  .wf-sidebar-bottom {
+    flex: 0 0 auto;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 9px 5px 2px;
+  }
+
+  .wf-sidebar-org-icon {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+    font-size: 13px;
+  }
+
+  .wf-sidebar-bottom strong { font-size: 8px; }
+  .wf-sidebar-bottom small { font-size: 7px; }
+
+  .wf-sidebar.is-collapsed {
+    flex: 0 0 64px;
+    width: 64px;
+    min-width: 64px;
+    padding-inline: 7px;
+  }
+}
+
+/* Keep the navigation usable on compact laptop viewports without introducing a scrollbar */
+@media (min-width: 621px) and (max-width: 900px) {
+  .wf-sidebar {
+    flex-basis: 188px;
+    width: 188px;
+    min-width: 188px;
+    padding-inline: 7px;
+  }
+
+  .wf-side-nav button {
+    min-height: 32px;
+    height: 32px;
+    gap: 7px;
+    padding-inline: 7px;
+    font-size: 9px;
+  }
+
+  .wf-nav-group-label { margin-top: 6px; }
+  .wf-sidebar.is-collapsed {
+    flex-basis: 64px;
+    width: 64px;
+    min-width: 64px;
+  }
+}
+
+/* Locate workspace tabs follow the same compact institutional control styling */
+.wf-tabbed-workspace .wf-work-tabs {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.wf-tabbed-workspace .wf-tab-panel {
+  min-height: 0;
+}
+
+.wf-tabbed-workspace .wf-tab-panel-card {
+  border-color: #dce5ec;
+  box-shadow: 0 2px 8px rgba(15,35,55,.035);
+}
+
+@media (min-width: 621px) {
+  .wf-tabbed-workspace .wf-tab-panel-card .wf-table-wrap {
+    max-height: min(42vh, 360px);
+  }
+}
