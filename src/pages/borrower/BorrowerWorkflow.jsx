@@ -113,6 +113,7 @@ export default function BorrowerWorkflow() {
   const [lenders, setLenders] = useState([]);
   const [securities, setSecurities] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [holdings, setHoldings] = useState([]);
   const [addingSecurityId, setAddingSecurityId] = useState(null);
   const [selectedTradeSecurity, setSelectedTradeSecurity] = useState(null);
   const [securityHistory, setSecurityHistory] = useState([]);
@@ -165,6 +166,7 @@ export default function BorrowerWorkflow() {
         { key: "lenders", call: getData(`${base}/lenders`) },
         { key: "securities", call: getData("/securities") },
         { key: "watchlist", call: getData(`${base}/watchlist`) },
+        { key: "holdings", call: getData(`${base}/holdings`) },
         { key: "account", call: getData(`${base}/account`) },
       ];
 
@@ -177,6 +179,7 @@ export default function BorrowerWorkflow() {
         lenders: [],
         securities: [],
         watchlist: [],
+        holdings: [],
       };
 
       results.forEach((result, index) => {
@@ -205,6 +208,7 @@ export default function BorrowerWorkflow() {
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
       setWatchlist(nextState.watchlist);
+      setHoldings(nextState.holdings);
       setAccount(nextState.account && typeof nextState.account === "object"
         ? (nextState.account.account ?? nextState.account)
         : null);
@@ -553,6 +557,7 @@ export default function BorrowerWorkflow() {
           <nav className="wf-side-nav" aria-label="Borrower navigation">
             <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
             <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
+            <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")}><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
             <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
@@ -607,6 +612,76 @@ export default function BorrowerWorkflow() {
             <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
             <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
           </div></div></div></div>
+        </section>
+      )}
+
+      {!loading && activeTab === "holdings" && (
+        <section className="wf-content wf-holdings-view">
+          <div className="wf-section-heading">
+            <div>
+              <div className="wf-eyebrow">PORTFOLIO / POSITIONS</div>
+              <h2>My Holdings</h2>
+              <p>Review owned securities, encumbrances and quantities currently available to sell.</p>
+            </div>
+            <button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh holdings</button>
+          </div>
+          <div className="wf-summary-grid wf-holdings-summary">
+            <div className="wf-summary-tile"><span>Securities held</span><strong>{holdings.length}</strong></div>
+            <div className="wf-summary-tile"><span>Total owned units</span><strong>{holdings.reduce((sum, row) => sum + Number(row.owned_quantity ?? row.ownedQuantity ?? 0), 0).toLocaleString("en-IN")}</strong></div>
+            <div className="wf-summary-tile"><span>Available to sell</span><strong>{holdings.reduce((sum, row) => sum + Number(row.available_owned_quantity ?? row.availableOwnedQuantity ?? Math.max(0, Number(row.owned_quantity ?? row.ownedQuantity ?? 0) - Number(row.pledged_quantity ?? row.pledgedQuantity ?? 0) - Number(row.blocked_owned ?? row.blockedOwned ?? 0))), 0).toLocaleString("en-IN")}</strong></div>
+            <div className="wf-summary-tile"><span>Portfolio market value</span><strong>{money(holdings.reduce((sum, row) => sum + Number(row.owned_quantity ?? row.ownedQuantity ?? 0) * Number(row.price ?? 0), 0))}</strong></div>
+          </div>
+          <section className="wf-panel wf-holdings-panel">
+            <div className="wf-panel-header">
+              <div><h2>Owned positions</h2><small>Sellable quantity excludes pledged and order-blocked units.</small></div>
+              <span className="wf-status">{holdings.length} positions</span>
+            </div>
+            <div className="wf-table-wrap wf-holdings-table-wrap">
+              <table className="wf-table">
+                <thead><tr>
+                  <th>Security</th><th>Owned</th><th>Pledged</th><th>Blocked</th>
+                  <th>Available to sell</th><th>Average cost</th><th>Market price</th><th>Unrealized P&amp;L</th><th>Action</th>
+                </tr></thead>
+                <tbody>
+                  {holdings.length ? holdings.map((holding) => {
+                    const owned = Number(holding.owned_quantity ?? holding.ownedQuantity ?? 0);
+                    const pledged = Number(holding.pledged_quantity ?? holding.pledgedQuantity ?? 0);
+                    const blocked = Number(holding.blocked_owned ?? holding.blockedOwned ?? 0);
+                    const available = Number(holding.available_owned_quantity ?? holding.availableOwnedQuantity ?? Math.max(0, owned - pledged - blocked));
+                    const price = Number(holding.price ?? 0);
+                    const averageCost = Number(holding.average_cost ?? holding.averageCost ?? 0);
+                    const pnl = Number(holding.unrealized_pnl ?? holding.unrealizedPnl ?? ((price - averageCost) * owned));
+                    const security = {
+                      id: holding.security_id ?? holding.securityId ?? holding.id,
+                      symbol: holding.symbol,
+                      name: holding.name,
+                      exchange: holding.exchange,
+                      price: holding.price,
+                    };
+                    return <tr key={security.id}>
+                      <td><strong>{holding.symbol ?? "—"}</strong><small className="wf-holding-name">{holding.name ?? "—"}</small></td>
+                      <td>{owned.toLocaleString("en-IN")}</td>
+                      <td>{pledged.toLocaleString("en-IN")}</td>
+                      <td>{blocked.toLocaleString("en-IN")}</td>
+                      <td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td>
+                      <td>{money(averageCost)}</td>
+                      <td>{price > 0 ? money(price) : "—"}</td>
+                      <td className={pnl >= 0 ? "wf-pnl-positive" : "wf-pnl-negative"}>{money(pnl)}</td>
+                      <td><button type="button" className="wf-small-button" disabled={available <= 0} onClick={() => {
+                        setSelectedTradeSecurity(security);
+                        setSecurityHistory([]);
+                        setTradeSide("SELL");
+                        setTradeSource("OWNED");
+                        setTradeQuantity("");
+                        setActiveTab("trading");
+                      }}>Sell</button></td>
+                    </tr>;
+                  }) : <tr><td colSpan={9} className="wf-empty">No owned holdings found for this organization.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="wf-info">Only unpledged, unblocked owned securities can be sold from this screen. Borrowed securities and locate approvals are handled separately through the securities-lending workflow.</div>
+          </section>
         </section>
       )}
 
