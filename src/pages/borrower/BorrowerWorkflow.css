@@ -536,3 +536,6 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-recalls-view .wf-summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .wf-lifecycle-track { grid-template-columns: 1fr 1fr; }
 }
+
+.wf-row-actions { display: inline-flex; align-items: center; gap: 5px; }
+.wf-row-actions .wf-icon-button { flex: 0 0 29px; }
