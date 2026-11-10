@@ -103,7 +103,7 @@ function DataTable({ columns, rows, empty = "No records found" }) {
 }
  
 export default function BorrowerWorkflow() {
-  const [activeTab, setActiveTab] = useState("msla");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [orgId, setOrgId] = useState(ORG_ID);
   const [agreements, setAgreements] = useState([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState(null);
@@ -112,6 +112,12 @@ export default function BorrowerWorkflow() {
   const [loans, setLoans] = useState([]);
   const [lenders, setLenders] = useState([]);
   const [securities, setSecurities] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+  const [selectedTradeSecurity, setSelectedTradeSecurity] = useState(null);
+  const [securityHistory, setSecurityHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [tradeSide, setTradeSide] = useState("BUY");
+  const [tradeQuantity, setTradeQuantity] = useState("");
  
   const [agreementForm, setAgreementForm] = useState(emptyAgreement);
   const [isCreatingAgreement, setIsCreatingAgreement] = useState(false);
@@ -152,6 +158,7 @@ export default function BorrowerWorkflow() {
         { key: "loans", call: getData(`${base}/loans`) },
         { key: "lenders", call: getData(`${base}/lenders`) },
         { key: "securities", call: getData("/securities") },
+        { key: "watchlist", call: getData(`${base}/watchlist`) },
       ];
 
       const results = await Promise.allSettled(requests.map((request) => request.call));
@@ -162,6 +169,7 @@ export default function BorrowerWorkflow() {
         loans: [],
         lenders: [],
         securities: [],
+        watchlist: [],
       };
 
       results.forEach((result, index) => {
@@ -189,6 +197,7 @@ export default function BorrowerWorkflow() {
       setLoans(nextState.loans);
       setLenders(nextState.lenders);
       setSecurities(nextState.securities);
+      setWatchlist(nextState.watchlist);
     } catch (error) {
       showNotice("error", error.response?.data?.detail ||
         error.response?.data?.message || "Unable to load borrower data.");
@@ -248,6 +257,33 @@ export default function BorrowerWorkflow() {
     });
   }, [loans, selectedAgreement]);
  
+  async function selectTradeSecurity(security) {
+    setSelectedTradeSecurity(security);
+    setSecurityHistory([]);
+    setHistoryLoading(true);
+    try {
+      const history = await getData(`/securities/${security.id}/history`);
+      setSecurityHistory(rowsOf(history));
+    } catch (error) {
+      showNotice("error", error.response?.data?.message || "Unable to load security price history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  const tradeCandles = securityHistory.map((point) => ({
+    date: point.date ?? point.timestamp ?? point.tradingDate ?? point.time,
+    open: Number(point.open ?? point.openPrice ?? point.close ?? point.price ?? 0),
+    high: Number(point.high ?? point.highPrice ?? point.close ?? point.price ?? 0),
+    low: Number(point.low ?? point.lowPrice ?? point.close ?? point.price ?? 0),
+    close: Number(point.close ?? point.closePrice ?? point.price ?? 0),
+  })).filter((point) => point.open > 0 && point.high > 0 && point.low > 0 && point.close > 0);
+
+  function previewTrade(e) {
+    e.preventDefault();
+    showNotice("error", "Order preview only: a buy/sell order API is not yet available in the borrower backend.");
+  }
+
   function showNotice(type, message) {
     setNotice({ type, message });
     window.setTimeout(() => setNotice(null), 4500);
@@ -442,6 +478,8 @@ export default function BorrowerWorkflow() {
           <div className="wf-brand"><span className="wf-brand-mark">M</span><span className="wf-brand-copy"><strong>MERIDIAN</strong><small>SECURITIES FINANCE</small></span></div>
           <div className="wf-sidebar-label">BORROWER WORKSPACE</div>
           <nav className="wf-side-nav" aria-label="Borrower navigation">
+            <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
+            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow</span></button>
             <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
             <button className={activeTab === "reservations" ? "active" : ""} onClick={() => setActiveTab("reservations")}><span className="wf-nav-icon">◫</span><span>Reservations</span></button>
@@ -477,6 +515,59 @@ export default function BorrowerWorkflow() {
         <div className={`wf-notice ${notice.type}`}>{notice.message}</div>
       )}
  
+      {!loading && activeTab === "dashboard" && (
+        <section className="wf-content wf-dashboard-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
+          <div className="wf-dashboard-grid">
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("reservations")}><span>CAPACITY</span><strong>Reservations</strong><small>Track approved locates and reservation requests</small><b>View reservations →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
+          </div>
+          <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid"><div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div><div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div><div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div><div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div></div></div>
+        </section>
+      )}
+
+      {!loading && activeTab === "trading" && (
+        <section className="wf-content wf-trading-view">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">MARKETS / ORDER ENTRY</div><h2>Trading</h2><p>Select a watchlist security to inspect its price history and prepare a buy or sell ticket.</p></div></div>
+          <div className="wf-trading-layout">
+            <section className="wf-panel wf-watchlist-panel">
+              <div className="wf-panel-header"><div><h2>Watchlist</h2><small>{watchlist.length} securities</small></div><button className="wf-secondary" onClick={loadAll}>↻</button></div>
+              <div className="wf-watchlist-items">
+                {watchlist.length ? watchlist.map((item) => {
+                  const security = securities.find((s) => String(s.id) === String(item.securityId ?? item.id)) ?? item;
+                  return <button key={security.id} className={String(selectedTradeSecurity?.id) === String(security.id) ? "selected" : ""} onClick={() => selectTradeSecurity(security)}>
+                    <span><strong>{security.symbol ?? security.ticker ?? `Security ${security.id}`}</strong><small>{security.name ?? security.description ?? "Listed security"}</small></span>
+                    <span className="wf-watch-chevron">›</span>
+                  </button>;
+                }) : <div className="wf-empty-state">Your watchlist is empty. Add securities to your watchlist to see them here.</div>}
+              </div>
+            </section>
+            <div className="wf-trading-main">
+              <section className="wf-panel wf-chart-panel">
+                {selectedTradeSecurity ? <>
+                  <div className="wf-chart-heading"><div><div className="wf-eyebrow">SECURITY PRICE</div><h2>{selectedTradeSecurity.symbol ?? selectedTradeSecurity.ticker ?? `Security #${selectedTradeSecurity.id}`}</h2><p>{selectedTradeSecurity.name ?? selectedTradeSecurity.description ?? "Price history"}</p></div><span className="wf-status">Selected</span></div>
+                  {historyLoading ? <div className="wf-loading">Loading candlestick data…</div> : tradeCandles.length ? <div className="wf-candle-chart">
+                    <div className="wf-chart-y-labels"><span>{Math.max(...tradeCandles.map(x=>x.high)).toFixed(2)}</span><span>{((Math.max(...tradeCandles.map(x=>x.high))+Math.min(...tradeCandles.map(x=>x.low)))/2).toFixed(2)}</span><span>{Math.min(...tradeCandles.map(x=>x.low)).toFixed(2)}</span></div>
+                    <div className="wf-candle-area">{tradeCandles.slice(-40).map((candle,index)=>{const min=Math.min(...tradeCandles.map(x=>x.low));const max=Math.max(...tradeCandles.map(x=>x.high));const range=max-min||1;const top=(max-candle.high)/range*100;const bottom=(max-candle.low)/range*100;const bodyTop=(max-Math.max(candle.open,candle.close))/range*100;const bodyHeight=Math.max(1,Math.abs(candle.open-candle.close)/range*100);const up=candle.close>=candle.open;return <div className="wf-candle" key={index} title={`${candle.date ?? ""} O:${candle.open} H:${candle.high} L:${candle.low} C:${candle.close}`}><i style={{top:`${top}%`,height:`${Math.max(1,bottom-top)}%`}}/><b className={up?"up":"down"} style={{top:`${bodyTop}%`,height:`${bodyHeight}%`}}/></div>;})}</div>
+                  </div> : <div className="wf-empty-state">No candlestick history is available for this security.</div>}
+                </> : <div className="wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose an instrument from your watchlist to display its candlestick chart.</p></div>}
+              </section>
+              <section className="wf-panel wf-order-panel">
+                <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Preview only</span></div>
+                <div className="wf-trade-switch"><button className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
+                <form onSubmit={previewTrade}><div className="wf-form-grid">
+                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>
+                  <Field label="Order type"><select defaultValue="MARKET"><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
+                  <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
+                </div><div className="wf-info">Order submission will be enabled once the backend exposes buy/sell execution endpoints. No order is sent from this screen yet.</div><div className="wf-actions"><button className="wf-primary" type="submit" disabled={!selectedTradeSecurity || !tradeQuantity}>{tradeSide==="BUY"?"Preview buy order":"Preview sell order"}</button></div></form>
+              </section>
+            </div>
+          </div>
+        </section>
+      )}
+
       {loading && <div className="wf-loading">Loading workspace...</div>}
 
       {!loading && activeTab === "msla" && (
