@@ -302,3 +302,46 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-nav-icon { font-size: 15px; }
   .wf-main-content { width: 100%; padding: 12px 12px 20px; }
 }
+
+/* Single-viewport desktop workspace: keep the chrome fixed and scroll only the active work area */
+@media (min-width: 621px) {
+  html, body, #root { height: 100%; min-height: 0; overflow: hidden; }
+  .wf-shell {
+    display: flex; flex-direction: column; height: 100dvh; min-height: 0;
+    padding-top: 0; padding-bottom: 0; overflow: hidden;
+  }
+  .wf-header { flex: 0 0 68px; min-height: 68px; height: 68px; margin-bottom: 0; }
+  .wf-workspace {
+    flex: 1 1 auto; min-height: 0; height: calc(100dvh - 68px);
+    overflow: hidden;
+  }
+  .wf-sidebar { position: relative; top: auto; height: 100%; min-height: 0; }
+  .wf-main-content {
+    display: flex; flex-direction: column; min-height: 0; height: 100%;
+    padding-top: 12px; padding-bottom: 12px; overflow: hidden;
+  }
+  .wf-metrics { flex: 0 0 auto; margin-bottom: 10px; }
+  .wf-metric { padding-top: 9px; padding-bottom: 8px; }
+  .wf-metric strong { font-size: 19px; }
+  .wf-notice { flex: 0 0 auto; margin-bottom: 8px; padding: 8px 12px; }
+  .wf-tabs { flex: 0 0 44px; min-height: 44px; margin-bottom: 10px; }
+  .wf-tabs button { min-height: 44px; }
+  .wf-loading { flex: 1; min-height: 0; overflow: auto; }
+  .wf-content {
+    flex: 1 1 auto; min-height: 0; height: 100%;
+    overflow-x: hidden; overflow-y: auto; padding-bottom: 2px;
+  }
+  .wf-msla-dashboard { min-height: 0; height: 100%; overflow: hidden; }
+  .wf-msla-grid-panel { min-height: 0; height: 100%; overflow: auto; }
+  .wf-msla-layout { min-height: 0; }
+  .wf-ag-grid-wrap { min-height: 0; }
+  .wf-ag-grid-wrap .ag-theme-alpine { min-height: 0; }
+  .wf-table-wrap { max-height: min(34vh, 280px); }
+}
+@media (max-width: 620px) {
+  html, body, #root { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+  .wf-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  .wf-workspace { min-height: 0; height: auto; overflow: visible; }
+  .wf-main-content { height: auto; overflow: visible; }
+  .wf-content { height: auto; overflow: visible; }
+}
