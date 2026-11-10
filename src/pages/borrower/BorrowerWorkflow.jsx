@@ -743,15 +743,17 @@ export default function BorrowerWorkflow() {
       {!loading && activeTab === "dashboard" && (
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
-          <div className="wf-panel"><div className="wf-panel-header"><h2>Recent activity</h2><button className="wf-secondary" onClick={loadAll}>Refresh data</button></div><div className="wf-summary-grid">
-            <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
-            <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
-            <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
-            <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
-            <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
-            <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
-          </div></div></div></div>
-
+          <section className="wf-panel wf-recent-activity">
+            <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
+            <div className="wf-summary-grid">
+              <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
+              <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
+              <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
+              <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
+              <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
+              <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
+            </div>
+          </section>
           <div className="wf-dashboard-grid">
             <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
