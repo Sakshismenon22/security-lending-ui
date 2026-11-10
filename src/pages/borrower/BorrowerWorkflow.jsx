@@ -694,21 +694,21 @@ export default function BorrowerWorkflow() {
           <div className="wf-sidebar-label">WORKSPACE</div>
           <nav className="wf-side-nav" aria-label="Borrower navigation">
             <div className="wf-nav-group-label">OVERVIEW</div>
-            <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
+            <button className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")} title="Dashboard"><span className="wf-nav-icon">⌂</span><span>Dashboard</span></button>
             <div className="wf-nav-group-label">MARKETS & PORTFOLIO</div>
-            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")}><span className="wf-nav-icon">▥</span><span>Trading</span></button>
-            <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")}><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
-            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")}><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
+            <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")} title="Trading"><span className="wf-nav-icon">▥</span><span>Trading</span></button>
+            <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")} title="My Holdings"><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
+            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")} title="Securities"><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <div className="wf-nav-group-label">SECURITIES FINANCE</div>
-            <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")}><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
-            <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")}><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
-            <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")}><span className="wf-nav-icon">▣</span><span>Loans</span></button>
-            <button className={activeTab === "collateral" ? "active" : ""} onClick={() => setActiveTab("collateral")}><span className="wf-nav-icon">⬡</span><span>Collateral</span></button>
-            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")}><span className="wf-nav-icon">↩</span><span>Recall Management</span></button>
-            <button className={activeTab === "settlements" ? "active" : ""} onClick={() => setActiveTab("settlements")}><span className="wf-nav-icon">⇥</span><span>Settlements & Returns</span></button>
+            <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")} title="Agreements"><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
+            <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")} title="Borrow / Locate"><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
+            <button className={activeTab === "loans" ? "active" : ""} onClick={() => setActiveTab("loans")} title="Loans"><span className="wf-nav-icon">▣</span><span>Loans</span></button>
+            <button className={activeTab === "collateral" ? "active" : ""} onClick={() => setActiveTab("collateral")} title="Collateral"><span className="wf-nav-icon">⬡</span><span>Collateral</span></button>
+            <button className={activeTab === "recalls" ? "active" : ""} onClick={() => setActiveTab("recalls")} title="Recall Management"><span className="wf-nav-icon">↩</span><span>Recall Management</span></button>
+            <button className={activeTab === "settlements" ? "active" : ""} onClick={() => setActiveTab("settlements")} title="Settlements & Returns"><span className="wf-nav-icon">⇥</span><span>Settlements & Returns</span></button>
             <div className="wf-nav-group-label">OPERATIONS & FINANCE</div>
-            <button className={activeTab === "billing" ? "active" : ""} onClick={() => setActiveTab("billing")}><span className="wf-nav-icon">₹</span><span>Billing & Statements</span></button>
-            <button className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}><span className="wf-nav-icon">♢</span><span>Notifications <em className="wf-nav-count">{notifications.filter(n => !(n.isRead ?? n.read)).length}</em></span></button>
+            <button className={activeTab === "billing" ? "active" : ""} onClick={() => setActiveTab("billing")} title="Billing & Statements"><span className="wf-nav-icon">₹</span><span>Billing & Statements</span></button>
+            <button className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")} title="Notifications & Alerts"><span className="wf-nav-icon">♢</span><span>Notifications <em className="wf-nav-count">{notifications.filter(n => !(n.isRead ?? n.read)).length}</em></span></button>
           </nav>
           <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
         </aside>
