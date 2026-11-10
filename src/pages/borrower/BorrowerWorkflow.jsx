@@ -108,6 +108,7 @@ export default function BorrowerWorkflow() {
   const [orgId, setOrgId] = useState(ORG_ID);
   const [agreements, setAgreements] = useState([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState(null);
+  const [detailView, setDetailView] = useState(null);
   const [locates, setLocates] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loans, setLoans] = useState([]);
@@ -240,21 +241,6 @@ export default function BorrowerWorkflow() {
   useEffect(() => {
     loadAll();
   }, [orgId]);
-
-  useEffect(() => {
-    if (!agreements.length) {
-      setSelectedAgreementId(null);
-      return;
-    }
-
-    const hasSelectedAgreement = agreements.some(
-      (agreement) => String(agreement.id) === String(selectedAgreementId)
-    );
-
-    if (!hasSelectedAgreement) {
-      setSelectedAgreementId(String(agreements[0].id));
-    }
-  }, [agreements, selectedAgreementId]);
 
   const selectedAgreement = useMemo(
     () => agreements.find(
@@ -497,8 +483,7 @@ export default function BorrowerWorkflow() {
       cashAmount: assetType === "CASH" ? Number(form.get("cashAmount") || 0) : 0,
       marginCallId: call.id,
     };
-    if ((assetType === "CASH" && payload.cashAmount <= 0) ||        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");      return;
-    }
+    if ((assetType === "CASH" && payload.cashAmount <= 0) ||        (assetType === "SECURITY" && (!payload.securityId || payload.quantity <= 0))) {      showNotice("error", "Enter a valid cash amount or security and quantity.");      return;    }
     setPledgingCallId(call.id);
     try {
       await postData(`${base}/margin-calls/${call.id}/collateral`, payload);
@@ -955,79 +940,55 @@ export default function BorrowerWorkflow() {
 
             <div className="wf-table-wrap">
               <table className="wf-table">
-                <thead>
-                  <tr>
-                    <th>MSLA</th>
-                    <th>Lender</th>
-                    <th>Credit limit</th>
-                    <th>Fee rate</th>
-                    <th>Expiry</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>MSLA</th><th>Lender</th><th>Credit limit</th><th>Fee rate</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {agreementRows.length ? agreementRows.map((agreement) => (
-                    <tr
-                      key={agreement.id}
-                      className={String(selectedAgreementId) === String(agreement.id) ? "wf-selected-row" : ""}
-                      onClick={() => setSelectedAgreementId(String(agreement.id))}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <td>{agreement.displayNumber}</td>
-                      <td>{agreement.lenderName}</td>
-                      <td>{agreement.displayCreditLimit}</td>
-                      <td>{Number(agreement.feeRate || 0).toFixed(4)}</td>
-                      <td>{agreement.displayExpiry}</td>
-                      <td><span className="wf-status">{agreement.status}</span></td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={6} className="wf-empty">No MSLA records available.</td>
-                    </tr>
-                  )}
+                  {agreementRows.length ? agreementRows.map((agreement) => {
+                    const expanded = String(selectedAgreementId) === String(agreement.id);
+                    const agreementLoans = loans.filter((loan) => String(loan.mslaId ?? loan.agreementId ?? loan.msla_id) === String(agreement.id));
+                    return (
+                      <>
+                        <tr key={agreement.id} className={expanded ? "wf-selected-row" : ""}>
+                          <td><button type="button" className="wf-expand-link" onClick={() => setSelectedAgreementId(expanded ? null : String(agreement.id))}>{expanded ? "▾" : "▸"} {agreement.displayNumber}</button></td>
+                          <td>{agreement.lenderName}</td><td>{agreement.displayCreditLimit}</td><td>{Number(agreement.feeRate || 0).toFixed(4)}</td><td>{agreement.displayExpiry}</td>
+                          <td><span className="wf-status">{agreement.status || "—"}</span></td>
+                          <td><button type="button" className="wf-icon-button" title="View MSLA details" aria-label={`View MSLA ${agreement.displayNumber} details`} onClick={() => setDetailView({type:"MSLA",record:agreement})}>◉</button></td>
+                        </tr>
+                        {expanded && <tr key={`loans-${agreement.id}`} className="wf-expanded-row"><td colSpan={7}>
+                          <div className="wf-expanded-content">
+                            <div className="wf-child-header"><h3>Loans under {agreement.displayNumber}</h3><span>{agreementLoans.length} loans</span></div>
+                            {agreementLoans.length ? <div className="wf-table-wrap"><table className="wf-table">
+                              <thead><tr><th>Loan ID</th><th>Reservation</th><th>Security</th><th>Quantity</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
+                              <tbody>{agreementLoans.map(loan => <tr key={loan.id}>
+                                <td>{loan.id}</td><td>{loan.reservationId ?? loan.reservation_id ?? "—"}</td><td>{loan.securityId ?? loan.security_id ?? "—"}</td><td>{loan.quantity ?? "—"}</td><td><span className="wf-status">{loan.status || "—"}</span></td><td>{formatDate(loan.createdAt ?? loan.created_at)}</td>
+                                <td><button type="button" className="wf-icon-button" title="View loan details" aria-label={`View loan ${loan.id} details`} onClick={() => setDetailView({type:"LOAN",record:loan})}>◉</button></td>
+                              </tr>)}</tbody>
+                            </table></div> : <div className="wf-empty-state compact">No loans are associated with this MSLA.</div>}
+                          </div>
+                        </td></tr>}
+                      </>
+                    );
+                  }) : <tr><td colSpan={7} className="wf-empty">No MSLA records available.</td></tr>}
                 </tbody>
               </table>
             </div>
-
-            {selectedAgreement && (
-              <div className="wf-selected-panel">
-                <div className="wf-selected-header">
-                  <h3>{selectedAgreement.displayNumber}</h3>
-                  <span className="wf-status">{selectedAgreement.status}</span>
-                </div>
-                {selectedAgreementLoans.length ? (                  <div className="wf-table-wrap">
-                    <table className="wf-table">                      <thead>
-                        <tr>
-                          <th>Loan ID</th>
-                          <th>Reservation</th>
-                          <th>Quantity</th>
-                          <th>Status</th>
-                          <th>Created</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedAgreementLoans.map((loan) => (
-                          <tr key={loan.id}>
-                            <td>{loan.id}</td>
-                            <td>{loan.reservationId ?? "—"}</td>
-                            <td>{loan.quantity ?? "—"}</td>
-                            <td><span className="wf-status">{loan.status || "—"}</span></td>
-                            <td>{formatDate(loan.createdAt)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="wf-empty-state">No loans for this MSLA yet.</div>
-                )}
-              </div>
-            )}
  
            </div>
          </section>
        )}
-       {!loading && false && activeTab === "msla" && (
+       {detailView && (
+        <div className="wf-modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailView(null); }}>
+          <section className="wf-detail-modal" role="dialog" aria-modal="true" aria-labelledby="wf-detail-title">
+            <div className="wf-panel-header"><div><div className="wf-eyebrow">{detailView.type === "MSLA" ? "AGREEMENT RECORD" : "LOAN RECORD"}</div><h2 id="wf-detail-title">{detailView.type === "MSLA" ? (detailView.record.number || `MSLA-${detailView.record.id}`) : `Loan #${detailView.record.id}`}</h2></div><button type="button" className="wf-icon-button" aria-label="Close details" onClick={() => setDetailView(null)}>✕</button></div>
+            <div className="wf-detail-grid">
+              {Object.entries(detailView.record).map(([key,value]) => (
+                <div className="wf-detail-field" key={key}><span>{key.replace(/([A-Z])/g," $1").replace(/_/g," ")}</span><strong>{value == null || value === "" ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)}</strong></div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {!loading && false && activeTab === "msla" && (
          <section className="wf-content">
            <div className="wf-section-heading">
              <div>
@@ -1346,14 +1307,15 @@ export default function BorrowerWorkflow() {
            </div>}
 
            {loanSubTab === "register" && <div className="wf-panel">
-             <h3>Loan register</h3>
+             <div className="wf-panel-header"><h3>Loan register</h3><span className="wf-status">{loans.length} loans</span></div>
              <DataTable rows={loans} columns={[
                { key: "id", label: "Loan ID" },
-               { key: "reservationId", label: "Reservation" },
-               { key: "securityId", label: "Security ID" },
+               { key: "reservationId", label: "Reservation", render: r => r.reservationId ?? r.reservation_id ?? "—" },
+               { key: "securityId", label: "Security ID", render: r => r.securityId ?? r.security_id ?? "—" },
                { key: "quantity", label: "Quantity" },
                { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-               { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt) },
+               { key: "createdAt", label: "Created", render: r => formatDate(r.createdAt ?? r.created_at) },
+               { key: "actions", label: "Action", render: r => <button type="button" className="wf-icon-button" title="View loan details" aria-label={`View loan ${r.id} details`} onClick={() => setDetailView({type:"LOAN",record:r})}>◉</button> },
              ]} />
            </div>}
 
