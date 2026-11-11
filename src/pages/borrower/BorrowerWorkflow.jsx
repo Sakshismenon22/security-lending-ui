@@ -493,25 +493,31 @@ export default function BorrowerWorkflow() {
   }
  
   async function reserveLocate(locate) {
-    const quantity = Number(window.prompt(
-      `Enter reservation quantity (requested: ${locate.quantity})`,
-      locate.quantity
-    ));
-    if (!quantity || quantity <= 0) return;
- 
+    const approvedQuantity = Number(locate.approvedQuantity ?? locate.approved_quantity ?? 0);
+    if (!approvedQuantity) {
+      showNotice("error", "This locate has no approved quantity available for reservation.");
+      return;
+    }
+    const quantityInput = window.prompt(
+      `Enter quantity to request from the lender (maximum approved: ${approvedQuantity})`,
+      String(approvedQuantity)
+    );
+    if (quantityInput === null) return;
+    const quantity = Number(quantityInput);
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > approvedQuantity) {
+      showNotice("error", `Enter a whole number between 1 and ${approvedQuantity}.`);
+      return;
+    }
     try {
-      await postData(
-        `${base}/locates/${locate.id}/reserve`,
-        { quantity }
-      );
-      showNotice("success", "Reservation request submitted.");
+      await postData(`${base}/locates/${locate.id}/reserve`, { quantity });
+      showNotice("success", "Reservation request sent to the lender. It will remain pending until the lender responds.");
       await loadAll();
     } catch (error) {
       showNotice("error", error.response?.data?.detail ||
-        error.response?.data?.message || "Reservation request failed.");
+        error.response?.data?.message || "Unable to send reservation request to the lender.");
     }
   }
- 
+
   async function respondToMarginCall(e, call) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -1565,16 +1571,36 @@ export default function BorrowerWorkflow() {
             </section>}
 
             {locateSubTab === "reservations" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Automatic reservation register</h3><small>Reservations created after lender approval of locate requests.</small></div><span className="wf-status">{reservations.length} records</span></div>
-              <p className="wf-help">Lender-approved locate quantities are automatically submitted for reservation and confirmed against lender inventory. No separate reservation action is required.</p>
+              <div className="wf-panel-header"><div><h3>Reservation request register</h3><small>Submit reservation instructions to the lender for approved locate requests.</small></div><span className="wf-status">{reservations.length} requests</span></div>
+              <p className="wf-help">An approved locate does not reserve securities automatically. Select an approved locate below and send a reservation request. The lender must review and confirm it before the quantity becomes available for loan creation.</p>
+              <h3 className="wf-child-title">Approved locates awaiting reservation request</h3>
+              <div className="wf-table-wrap">
+                <table className="wf-table">
+                  <thead><tr><th>Locate ID</th><th>Security</th><th>Requested</th><th>Approved</th><th>Expiry</th><th>Action</th></tr></thead>
+                  <tbody>
+                    {approvedLocates.filter(locate => !reservations.some(r => String(r.locateId ?? r.locate_id ?? r.locateRequestId) === String(locate.id))).length
+                      ? approvedLocates.filter(locate => !reservations.some(r => String(r.locateId ?? r.locate_id ?? r.locateRequestId) === String(locate.id))).map(locate => (
+                        <tr key={locate.id}>
+                          <td><strong>#{locate.id}</strong></td>
+                          <td>{securities.find(s => String(s.id) === String(locate.securityId ?? locate.security_id))?.symbol ?? (locate.securityId ?? locate.security_id ?? "—")}</td>
+                          <td>{Number(locate.quantity ?? 0).toLocaleString("en-IN")}</td>
+                          <td><strong>{Number(locate.approvedQuantity ?? locate.approved_quantity ?? 0).toLocaleString("en-IN")}</strong></td>
+                          <td>{formatDate(locate.expiresAt ?? locate.expires_at)}</td>
+                          <td><button type="button" className="wf-small-button" onClick={() => reserveLocate(locate)}>Send to lender</button></td>
+                        </tr>
+                      )) : <tr><td colSpan={6} className="wf-empty">No approved locate requests are awaiting a reservation instruction.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+              <div className="wf-panel-header wf-reservation-list-heading"><div><h3>Reservation requests sent</h3><small>Track lender decisions and remaining quantities.</small></div></div>
               <DataTable rows={reservations} columns={[
-                { key: "id", label: "Reservation ID" },
+                { key: "id", label: "Request ID" },
                 { key: "locateId", label: "Locate ID", render: r => r.locateId ?? r.locate_id ?? "—" },
-                { key: "quantity", label: "Approved quantity" },
+                { key: "quantity", label: "Requested quantity" },
                 { key: "remainingQuantity", label: "Remaining quantity", render: r => r.remainingQuantity ?? r.remaining_quantity ?? "—" },
-                { key: "status", label: "Reservation status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt) },
-              ]} empty="No automatic reservations have been created yet." />
+                { key: "status", label: "Lender decision", render: r => <span className="wf-status">{String(r.status || "PENDING").replaceAll("_"," ")}</span> },
+                { key: "expiresAt", label: "Expires", render: r => formatDate(r.expiresAt ?? r.expires_at) },
+              ]} empty="No reservation requests have been sent to lenders." />
             </section>}
           </div>
         </section>
