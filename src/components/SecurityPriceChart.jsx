@@ -142,8 +142,10 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
     return chartData.filter((item) => item.time >= cutoff);
   }, [chartData, range]);
 
+  const hasVisibleData = visibleData.length > 0;
+
   useEffect(() => {
-    if (collapsed || !hostRef.current) return undefined;
+    if (collapsed || loading || !hostRef.current) return undefined;
 
     const chart = createChart(hostRef.current, {
       width: hostRef.current.clientWidth,
@@ -200,7 +202,7 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, [collapsed, maximized]);
+  }, [collapsed, maximized, loading, hasVisibleData]);
 
   useEffect(() => {
     if (!chartRef.current || !visibleData.length) return;
