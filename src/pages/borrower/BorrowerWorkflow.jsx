@@ -1565,15 +1565,16 @@ export default function BorrowerWorkflow() {
              <button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh loans</button>
            </div>
 
-           <div className="wf-panel wf-loan-tabs">
-             <div className="wf-tab-actions" role="tablist" aria-label="Loan workspace sections">
+           <div className="wf-panel wf-loan-workspace">
+             <div className="wf-loan-tabs">
+               <div className="wf-tab-actions" role="tablist" aria-label="Loan workspace sections">
                <button type="button" role="tab" aria-selected={loanSubTab === "create"} className={loanSubTab === "create" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("create")}>Create Loan</button>
                <button type="button" role="tab" aria-selected={loanSubTab === "register"} className={loanSubTab === "register" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("register")}>Loan Register</button>
                <button type="button" role="tab" aria-selected={loanSubTab === "margin"} className={loanSubTab === "margin" ? "wf-primary" : "wf-secondary"} onClick={() => setLoanSubTab("margin")}>Margin Calls & Rebates <span className="wf-status">{marginCalls.length}</span></button>
+               </div>
              </div>
-           </div>
 
-           {loanSubTab === "create" && <div className="wf-panel">
+           {loanSubTab === "create" && <div className="wf-loan-tab-content">
              <h3>Loan request details</h3>
              <form onSubmit={submitLoan}>
                <div className="wf-form-grid">
@@ -1636,7 +1637,7 @@ export default function BorrowerWorkflow() {
              </form>
            </div>}
 
-           {loanSubTab === "register" && <div className="wf-panel">
+           {loanSubTab === "register" && <div className="wf-loan-tab-content">
              <div className="wf-panel-header"><h3>Loan register & lifecycle</h3><span className="wf-status">{loans.length} loans</span></div>
              <p className="wf-help">Track each loan from request through settlement, partial returns and closure. Returns remain pending until the lifecycle owner confirms settlement.</p>
              <div className="wf-table-wrap"><table className="wf-table">
@@ -1689,7 +1690,7 @@ export default function BorrowerWorkflow() {
            </div>}
 
 
-           {loanSubTab === "margin" && <div className="wf-panel">
+           {loanSubTab === "margin" && <div className="wf-loan-tab-content">
              <div className="wf-panel-header"><div><h3>Margin calls, rebates & collateral by loan</h3><small>Select a loan to expand its margin calls, cash collateral and security collateral positions.</small></div><span className="wf-status">{loans.length} loans</span></div>
              <div className="wf-summary-grid wf-margin-summary">
                <div className="wf-summary-tile"><span>Open / overdue</span><strong>{marginCalls.filter(call=>["OPEN","PARTIALLY_FULFILLED","OVERDUE"].includes(String(call.status||"").toUpperCase())).length}</strong></div>
