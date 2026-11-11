@@ -730,12 +730,6 @@ export default function BorrowerWorkflow() {
       {!loading && activeTab === "dashboard" && (
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
-          <div className="wf-inline-metrics" aria-label="Borrower activity summary">
-            <span><strong>Active agreements:</strong> {agreements.length}</span>
-            <span><strong>Locate requests:</strong> {locates.length}</span>
-            <span><strong>Reservations:</strong> {reservations.length}</span>
-            <span><strong>Loan requests:</strong> {loans.length}</span>
-          </div>
           <section className="wf-panel wf-recent-activity">
             <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
             <div className="wf-summary-grid">

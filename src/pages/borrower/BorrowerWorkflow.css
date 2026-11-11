@@ -1165,3 +1165,39 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-holdings-view > .wf-work-tabs button,
   .wf-loan-tabs .wf-tab-actions button { padding-inline:10px; }
 }
+
+
+/* Dashboard recent activity: dense summary strip without a duplicate metric card */
+.wf-dashboard-view { gap:10px; }
+.wf-dashboard-view .wf-recent-activity { margin:0; }
+.wf-dashboard-view .wf-recent-activity .wf-panel-header {
+  min-height:0; padding:9px 11px 7px;
+}
+.wf-dashboard-view .wf-recent-activity .wf-panel-header h2 { font-size:12px; }
+.wf-dashboard-view .wf-recent-activity .wf-panel-header small { margin-top:2px; font-size:8px; }
+.wf-dashboard-view .wf-recent-activity .wf-summary-grid {
+  display:grid; grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:0; padding:0; margin:0;
+}
+.wf-dashboard-view .wf-recent-activity .wf-summary-tile {
+  min-width:0; padding:8px 10px; border:0; border-right:1px solid #edf0f3;
+  border-radius:0; background:#fff;
+}
+.wf-dashboard-view .wf-recent-activity .wf-summary-tile:last-child { border-right:0; }
+.wf-dashboard-view .wf-recent-activity .wf-summary-tile span {
+  margin:0 0 3px; font-size:8px; letter-spacing:.045em;
+}
+.wf-dashboard-view .wf-recent-activity .wf-summary-tile strong {
+  font-size:13px; line-height:1.2;
+}
+@media(max-width:900px) {
+  .wf-dashboard-view .wf-recent-activity .wf-summary-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .wf-dashboard-view .wf-recent-activity .wf-summary-tile:nth-child(3) { border-right:0; }
+  .wf-dashboard-view .wf-recent-activity .wf-summary-tile:nth-child(n+4) { border-top:1px solid #edf0f3; }
+}
+@media(max-width:520px) {
+  .wf-dashboard-view .wf-recent-activity .wf-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .wf-dashboard-view .wf-recent-activity .wf-summary-tile:nth-child(3) { border-right:1px solid #edf0f3; }
+  .wf-dashboard-view .wf-recent-activity .wf-summary-tile:nth-child(2n) { border-right:0; }
+  .wf-dashboard-view .wf-recent-activity .wf-summary-tile:nth-child(n+3) { border-top:1px solid #edf0f3; }
+}
