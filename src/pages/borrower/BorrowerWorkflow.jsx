@@ -105,6 +105,10 @@ function DataTable({ columns, rows, empty = "No records found" }) {
 export default function BorrowerWorkflow() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loanSubTab, setLoanSubTab] = useState("create");
+  const [holdingsSubTab, setHoldingsSubTab] = useState("owned");
+  const [billingSubTab, setBillingSubTab] = useState("fees");
+  const [movementSubTab, setMovementSubTab] = useState("cash");
+  const [expandedMarginLoanId, setExpandedMarginLoanId] = useState(null);
   const [locateSubTab, setLocateSubTab] = useState("create");
   const [expandedLocateId, setExpandedLocateId] = useState(null);
   const [marginAssetTypes, setMarginAssetTypes] = useState({});
@@ -745,73 +749,41 @@ export default function BorrowerWorkflow() {
         </section>
       )}
 
+
       {!loading && activeTab === "holdings" && (
         <section className="wf-content wf-holdings-view">
-          <div className="wf-section-heading">
-            <div>
-              <div className="wf-eyebrow">PORTFOLIO / POSITIONS</div>
-              <h2>My Holdings</h2>
-              <p>Review owned securities, encumbrances and quantities currently available to sell.</p>
-            </div>
-            <button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh holdings</button>
-          </div>
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">PORTFOLIO / POSITIONS</div><h2>My Holdings</h2><p>View owned securities separately from securities borrowed under active loans.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh holdings</button></div>
           <div className="wf-summary-grid wf-holdings-summary">
-            <div className="wf-summary-tile"><span>Securities held</span><strong>{holdings.length}</strong></div>
-            <div className="wf-summary-tile"><span>Total owned units</span><strong>{holdings.reduce((sum, row) => sum + Number(row.owned_quantity ?? row.ownedQuantity ?? 0), 0).toLocaleString("en-IN")}</strong></div>
-            <div className="wf-summary-tile"><span>Available to sell</span><strong>{holdings.reduce((sum, row) => sum + Number(row.available_owned_quantity ?? row.availableOwnedQuantity ?? Math.max(0, Number(row.owned_quantity ?? row.ownedQuantity ?? 0) - Number(row.pledged_quantity ?? row.pledgedQuantity ?? 0) - Number(row.blocked_owned ?? row.blockedOwned ?? 0))), 0).toLocaleString("en-IN")}</strong></div>
-            <div className="wf-summary-tile"><span>Portfolio market value</span><strong>{money(holdings.reduce((sum, row) => sum + Number(row.owned_quantity ?? row.ownedQuantity ?? 0) * Number(row.price ?? 0), 0))}</strong></div>
+            <div className="wf-summary-tile"><span>Owned securities</span><strong>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length}</strong></div>
+            <div className="wf-summary-tile"><span>Owned quantity</span><strong>{holdings.reduce((sum,h)=>sum+Number(h.owned_quantity??h.ownedQuantity??0),0).toLocaleString("en-IN")}</strong></div>
+            <div className="wf-summary-tile"><span>Borrowed securities</span><strong>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length}</strong></div>
+            <div className="wf-summary-tile"><span>Borrowed quantity</span><strong>{holdings.reduce((sum,h)=>sum+Number(h.borrowed_quantity??h.borrowedQuantity??0),0).toLocaleString("en-IN")}</strong></div>
           </div>
-          <section className="wf-panel wf-holdings-panel">
-            <div className="wf-panel-header">
-              <div><h2>Owned positions</h2><small>Sellable quantity excludes pledged and order-blocked units.</small></div>
-              <span className="wf-status">{holdings.length} positions</span>
-            </div>
-            <div className="wf-table-wrap wf-holdings-table-wrap">
-              <table className="wf-table">
-                <thead><tr>
-                  <th>Security</th><th>Owned</th><th>Pledged</th><th>Blocked</th>
-                  <th>Available to sell</th><th>Average cost</th><th>Market price</th><th>Unrealized P&amp;L</th><th>Action</th>
-                </tr></thead>
-                <tbody>
-                  {holdings.length ? holdings.map((holding) => {
-                    const owned = Number(holding.owned_quantity ?? holding.ownedQuantity ?? 0);
-                    const pledged = Number(holding.pledged_quantity ?? holding.pledgedQuantity ?? 0);
-                    const blocked = Number(holding.blocked_owned ?? holding.blockedOwned ?? 0);
-                    const available = Number(holding.available_owned_quantity ?? holding.availableOwnedQuantity ?? Math.max(0, owned - pledged - blocked));
-                    const price = Number(holding.price ?? 0);
-                    const averageCost = Number(holding.average_cost ?? holding.averageCost ?? 0);
-                    const pnl = Number(holding.unrealized_pnl ?? holding.unrealizedPnl ?? ((price - averageCost) * owned));
-                    const security = {
-                      id: holding.security_id ?? holding.securityId ?? holding.id,
-                      symbol: holding.symbol,
-                      name: holding.name,
-                      exchange: holding.exchange,
-                      price: holding.price,
-                    };
-                    return <tr key={security.id}>
-                      <td><strong>{holding.symbol ?? "—"}</strong><small className="wf-holding-name">{holding.name ?? "—"}</small></td>
-                      <td>{owned.toLocaleString("en-IN")}</td>
-                      <td>{pledged.toLocaleString("en-IN")}</td>
-                      <td>{blocked.toLocaleString("en-IN")}</td>
-                      <td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td>
-                      <td>{money(averageCost)}</td>
-                      <td>{price > 0 ? money(price) : "—"}</td>
-                      <td className={pnl >= 0 ? "wf-pnl-positive" : "wf-pnl-negative"}>{money(pnl)}</td>
-                      <td><button type="button" className="wf-small-button" disabled={available <= 0} onClick={() => {
-                        setSelectedTradeSecurity(security);
-                        setSecurityHistory([]);
-                        setTradeSide("SELL");
-                        setTradeSource("OWNED");
-                        setTradeQuantity("");
-                        setActiveTab("trading");
-                      }}>Sell</button></td>
-                    </tr>;
-                  }) : <tr><td colSpan={9} className="wf-empty">No owned holdings found for this organization.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-            <div className="wf-info">Only unpledged, unblocked owned securities can be sold from this screen. Borrowed securities and locate approvals are handled separately through the securities-lending workflow.</div>
-          </section>
+          <div className="wf-work-tabs" role="tablist" aria-label="Holdings type">
+            <button type="button" role="tab" aria-selected={holdingsSubTab==="owned"} className={holdingsSubTab==="owned"?"active":""} onClick={()=>setHoldingsSubTab("owned")}>Owned positions <span>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length}</span></button>
+            <button type="button" role="tab" aria-selected={holdingsSubTab==="borrowed"} className={holdingsSubTab==="borrowed"?"active":""} onClick={()=>setHoldingsSubTab("borrowed")}>Borrowed positions <span>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length}</span></button>
+          </div>
+          {holdingsSubTab==="owned" ? <section className="wf-panel wf-holdings-panel">
+            <div className="wf-panel-header"><div><h2>Owned positions</h2><small>Unpledged and unblocked owned securities available for sale.</small></div></div>
+            <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
+              <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Owned qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available to sell</th><th>Action</th></tr></thead>
+              <tbody>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length ? holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).map(h=>{
+                const id=h.security_id??h.securityId??h.id, owned=Number(h.owned_quantity??h.ownedQuantity??0), pledged=Number(h.pledged_quantity??h.pledgedQuantity??0), blocked=Number(h.blocked_owned??h.blockedOwned??0), available=Number(h.available_owned_quantity??h.availableOwnedQuantity??Math.max(0,owned-pledged-blocked)), price=Number(h.price??0);
+                const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
+                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDate(h.price_at??h.priceAt)}</td><td>{owned.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("OWNED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
+              }) : <tr><td colSpan={10} className="wf-empty">No owned positions are recorded.</td></tr>}</tbody>
+            </table></div>
+          </section> : <section className="wf-panel wf-holdings-panel">
+            <div className="wf-panel-header"><div><h2>Borrowed positions</h2><small>Settled borrowed inventory. Locate approvals are not included as borrowed holdings.</small></div></div>
+            <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
+              <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Borrowed qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available borrowed</th><th>Action</th></tr></thead>
+              <tbody>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length ? holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).map(h=>{
+                const id=h.security_id??h.securityId??h.id, borrowed=Number(h.borrowed_quantity??h.borrowedQuantity??0), pledged=Number(h.pledged_borrowed_quantity??h.pledgedBorrowedQuantity??0), blocked=Number(h.blocked_borrowed??h.blockedBorrowed??0), available=Number(h.available_borrowed_quantity??h.availableBorrowedQuantity??Math.max(0,borrowed-blocked)), price=Number(h.price??0);
+                const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
+                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDate(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell borrowed</button></td></tr>;
+              }) : <tr><td colSpan={10} className="wf-empty">No settled borrowed positions are recorded.</td></tr>}</tbody>
+            </table></div>
+          </section>}
         </section>
       )}
 
@@ -979,59 +951,32 @@ export default function BorrowerWorkflow() {
         </section>
       )}
 
+
 {!loading && activeTab === "billing" && (
-        <section className="wf-content wf-operations-view">
-          <div className="wf-section-heading"><div><div className="wf-eyebrow">FINANCIAL OPERATIONS</div><h2>Billing & Statements</h2><p>Review lender-issued borrowing fees, rebate accruals, payment records and account statements.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
-          <div className="wf-summary-grid">
-            <div className="wf-summary-tile"><span>Fee bills</span><strong>{fees.length}</strong></div>
-            <div className="wf-summary-tile"><span>Fee amount</span><strong>{money(fees.reduce((sum,f)=>sum+Number(f.feeAmount??f.fee_amount??0),0))}</strong></div>
-            <div className="wf-summary-tile"><span>Rebate accruals</span><strong>{money(rebates.reduce((sum,r)=>sum+Number(r.amount||0),0))}</strong></div>
-            <div className="wf-summary-tile"><span>Payments</span><strong>{payments.length+rebatePayments.length}</strong></div>
+        <section className="wf-content wf-operations-view wf-tabbed-workspace">
+          <div className="wf-section-heading"><div><div className="wf-eyebrow">FINANCIAL OPERATIONS</div><h2>Billing & Statements</h2><p>Review borrowing fee bills, daily accruals and cash collateral rebates.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh</button></div>
+          <div className="wf-summary-grid"><div className="wf-summary-tile"><span>Fee bills</span><strong>{fees.length}</strong></div><div className="wf-summary-tile"><span>Daily accruals</span><strong>{accruals.length}</strong></div><div className="wf-summary-tile"><span>Cash collateral rebates</span><strong>{rebates.length}</strong></div></div>
+          <div className="wf-work-tabs" role="tablist" aria-label="Billing and statement views">
+            <button type="button" role="tab" aria-selected={billingSubTab==="fees"} className={billingSubTab==="fees"?"active":""} onClick={()=>setBillingSubTab("fees")}>Borrowing fee bills <span>{fees.length}</span></button>
+            <button type="button" role="tab" aria-selected={billingSubTab==="accruals"} className={billingSubTab==="accruals"?"active":""} onClick={()=>setBillingSubTab("accruals")}>Daily accruals <span>{accruals.length}</span></button>
+            <button type="button" role="tab" aria-selected={billingSubTab==="rebates"} className={billingSubTab==="rebates"?"active":""} onClick={()=>setBillingSubTab("rebates")}>Cash collateral rebates <span>{rebates.length}</span></button>
           </div>
-          <div className="wf-panel"><div className="wf-panel-header"><h3>Borrowing fee bills</h3><span className="wf-status">{fees.length} bills</span></div>
-            <DataTable rows={fees} columns={[
-              {key:"id",label:"Bill ID"},{key:"loanId",label:"Loan",render:f=>f.loanId??f.loan_id??"—"},
-              {key:"periodStart",label:"Period start",render:f=>formatDate(f.periodStart??f.period_start)},
-              {key:"periodEnd",label:"Period end",render:f=>formatDate(f.periodEnd??f.period_end)},
-              {key:"feeRate",label:"Fee rate",render:f=>f.feeRate==null&&f.fee_rate==null?"—":`${(Number(f.feeRate??f.fee_rate)*100).toFixed(4)}%`},
-              {key:"feeAmount",label:"Amount",render:f=>money(f.feeAmount??f.fee_amount)},
-              {key:"dueDate",label:"Due date",render:f=>formatDate(f.dueDate??f.due_date)},
-              {key:"status",label:"Status",render:f=><span className="wf-status">{f.status||"—"}</span>}
-            ]} empty="No fee bills have been issued." />
+          <div className="wf-tab-panel">
+            {billingSubTab==="fees" && <section className="wf-panel wf-tab-panel-card"><div className="wf-panel-header"><h3>Borrowing fee bills</h3><span className="wf-status">{fees.length} bills</span></div><DataTable rows={fees} columns={[
+              {key:"id",label:"Bill ID"},{key:"loanId",label:"Loan",render:f=>f.loanId??f.loan_id??"—"},{key:"periodStart",label:"Period start",render:f=>formatDate(f.periodStart??f.period_start)},{key:"periodEnd",label:"Period end",render:f=>formatDate(f.periodEnd??f.period_end)},{key:"feeRate",label:"Fee rate",render:f=>f.feeRate==null&&f.fee_rate==null?"—":((Number(f.feeRate??f.fee_rate)*100).toFixed(4)+"%")},{key:"feeAmount",label:"Amount",render:f=>money(f.feeAmount??f.fee_amount)},{key:"dueDate",label:"Due date",render:f=>formatDate(f.dueDate??f.due_date)},{key:"status",label:"Status",render:f=><span className="wf-status">{f.status||"—"}</span>}
+            ]} empty="No fee bills have been issued." /></section>}
+            {billingSubTab==="accruals" && <section className="wf-panel wf-tab-panel-card"><div className="wf-panel-header"><h3>Daily accruals</h3><span className="wf-status">{accruals.length} entries</span></div><DataTable rows={accruals} columns={[
+              {key:"id",label:"Accrual ID"},{key:"loanId",label:"Loan",render:a=>a.loanId??a.loan_id??"—"},{key:"accrualDate",label:"Date",render:a=>formatDate(a.accrualDate??a.accrual_date)},{key:"type",label:"Type"},{key:"baseValue",label:"Base value",render:a=>money(a.baseValue??a.base_value)},{key:"rate",label:"Rate",render:a=>a.rate==null?"—":((Number(a.rate)*100).toFixed(4)+"%")},{key:"amount",label:"Accrued amount",render:a=>money(a.amount)}
+            ]} empty="No daily accruals have been reported." /></section>}
+            {billingSubTab==="rebates" && <section className="wf-panel wf-tab-panel-card"><div className="wf-panel-header"><h3>Cash collateral rebates</h3><span className="wf-status">{rebates.length} accruals</span></div><DataTable rows={rebates} columns={[
+              {key:"id",label:"Rebate ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},{key:"rebateRate",label:"Rebate rate",render:r=>r.rebateRate==null&&r.rebate_rate==null?"—":((Number(r.rebateRate??r.rebate_rate)*100).toFixed(4)+"%")},{key:"amount",label:"Accrued amount",render:r=>money(r.amount)},{key:"accrualDate",label:"Accrual date",render:r=>formatDate(r.accrualDate??r.accrual_date)},{key:"nextPaymentDate",label:"Next payment",render:r=>formatDate(r.nextPaymentDate??r.next_payment_date)},{key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>}
+            ]} empty="No rebate accruals have been reported." /></section>}
           </div>
-          <div className="wf-panel"><div className="wf-panel-header"><h3>Daily accruals</h3><span className="wf-status">{accruals.length} entries</span></div>
-            <DataTable rows={accruals} columns={[
-              {key:"id",label:"Accrual ID"},{key:"loanId",label:"Loan",render:a=>a.loanId??a.loan_id??"—"},
-              {key:"accrualDate",label:"Date",render:a=>formatDate(a.accrualDate??a.accrual_date)},
-              {key:"type",label:"Type"},{key:"baseValue",label:"Base value",render:a=>money(a.baseValue??a.base_value)},
-              {key:"rate",label:"Rate",render:a=>a.rate==null?"—":`${(Number(a.rate)*100).toFixed(4)}%`},
-              {key:"amount",label:"Accrued amount",render:a=>money(a.amount)}
-            ]} empty="No daily accruals have been reported." />
-          </div>
-          <div className="wf-panel"><div className="wf-panel-header"><h3>Cash collateral rebates</h3><span className="wf-status">{rebates.length} accruals</span></div>
-            <DataTable rows={rebates} columns={[
-              {key:"id",label:"Rebate ID"},{key:"loanId",label:"Loan",render:r=>r.loanId??r.loan_id??"—"},
-              {key:"rebateRate",label:"Rebate rate",render:r=>r.rebateRate==null&&r.rebate_rate==null?"—":`${(Number(r.rebateRate??r.rebate_rate)*100).toFixed(4)}%`},
-              {key:"amount",label:"Accrued amount",render:r=>money(r.amount)},
-              {key:"accrualDate",label:"Accrual date",render:r=>formatDate(r.accrualDate??r.accrual_date)},
-              {key:"nextPaymentDate",label:"Next payment",render:r=>formatDate(r.nextPaymentDate??r.next_payment_date)},
-              {key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>}
-            ]} empty="No rebate accruals have been reported." />
-          </div>
-          <div className="wf-panel"><div className="wf-panel-header"><h3>Payments & rebate payments</h3><span className="wf-status">{payments.length+rebatePayments.length} records</span></div>
-            <DataTable rows={[...payments.map(p=>({...p,recordType:p.type??"PAYMENT"})),...rebatePayments.map(p=>({...p,recordType:"REBATE"}))]} columns={[
-              {key:"id",label:"Payment ID"},{key:"recordType",label:"Type"},{key:"feeId",label:"Fee",render:p=>p.feeId??p.fee_id??"—"},
-              {key:"amount",label:"Amount",render:p=>money(p.amount)},{key:"status",label:"Status",render:p=><span className="wf-status">{p.status||"—"}</span>},
-              {key:"createdAt",label:"Created",render:p=>formatDate(p.createdAt??p.created_at)},
-              {key:"confirmedAt",label:"Confirmed",render:p=>formatDate(p.confirmedAt??p.confirmed_at)}
-            ]} empty="No payment records are available." />
-          </div>
-          <div className="wf-panel wf-statement-panel"><div><h3>Account statement</h3><p>Download the organization statement generated by borrower-service.</p></div>
-            <a className="wf-primary wf-statement-link" href={`${import.meta.env.VITE_BORROWER_API}${base}/statement.csv`} target="_blank" rel="noreferrer">Download CSV statement ↓</a>
-          </div>
-          <div className="wf-info">Fee bills, daily accruals, rebate calculations and payment confirmations are read-only financial projections. Their owning services determine amounts and settlement; the borrower workspace does not recalculate them.</div>
+          <div className="wf-panel wf-statement-panel"><div><h3>Account statement</h3><p>Download the organization statement generated by borrower-service.</p></div><a className="wf-primary wf-statement-link" href={import.meta.env.VITE_BORROWER_API+base+"/statement.csv"} target="_blank" rel="noreferrer">Download CSV statement ↓</a></div>
+          <div className="wf-info">Fee bills, daily accruals and rebate calculations are read-only financial records. Their owning services determine amounts and settlement.</div>
         </section>
       )}
+
 
       {!loading && activeTab === "settlements" && (
         <section className="wf-content wf-operations-view wf-tabbed-workspace">
@@ -1613,8 +1558,8 @@ export default function BorrowerWorkflow() {
            <div className="wf-section-heading">
              <div>
                <div className="wf-eyebrow">BORROWING OPERATIONS</div>
-               <h2>Create loan request</h2>
-              <p>Submit a loan request against confirmed reserved securities.</p>
+               <h2>Loans</h2>
+              <p>Create loan requests and monitor loan lifecycle, margin calls and collateral.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh loans</button>
              </div>
            </div>
 
@@ -1741,78 +1686,64 @@ export default function BorrowerWorkflow() {
              </table></div>
            </div>}
 
+
            {loanSubTab === "margin" && <div className="wf-panel">
-             <div className="wf-panel-header"><h3>Loan margin calls & collateral</h3><span className="wf-status">{marginCalls.length} margin calls</span></div>
-             <p className="wf-help">Margin calls are raised by the lender's valuation process. Respond against the specific loan by pledging eligible cash or securities.</p>
+             <div className="wf-panel-header"><div><h3>Margin calls, rebates & collateral by loan</h3><small>Select a loan to expand its margin calls, cash collateral and security collateral positions.</small></div><span className="wf-status">{loans.length} loans</span></div>
              <div className="wf-summary-grid wf-margin-summary">
-               <div className="wf-summary-tile"><span>Open / overdue</span><strong>{marginCalls.filter(call => ["OPEN","PARTIALLY_FULFILLED","OVERDUE"].includes(String(call.status || "").toUpperCase())).length}</strong></div>
-               <div className="wf-summary-tile"><span>Fully fulfilled</span><strong>{marginCalls.filter(call => ["FULFILLED","CLOSED","SATISFIED"].includes(String(call.status || "").toUpperCase())).length}</strong></div>
+               <div className="wf-summary-tile"><span>Open / overdue</span><strong>{marginCalls.filter(call=>["OPEN","PARTIALLY_FULFILLED","OVERDUE"].includes(String(call.status||"").toUpperCase())).length}</strong></div>
+               <div className="wf-summary-tile"><span>Fully fulfilled</span><strong>{marginCalls.filter(call=>["FULFILLED","CLOSED","SATISFIED"].includes(String(call.status||"").toUpperCase())).length}</strong></div>
                <div className="wf-summary-tile"><span>Total calls</span><strong>{marginCalls.length}</strong></div>
-               <div className="wf-summary-tile"><span>Responses pending</span><strong>{collateralPositions.filter(position => ["PENDING","SUBMITTED","PENDING_CONFIRMATION"].includes(String(position.status || "").toUpperCase())).length}</strong></div>
+               <div className="wf-summary-tile"><span>Collateral positions</span><strong>{collateralPositions.length}</strong></div>
              </div>
-             {loans.length ? loans.map((loan) => {
-               const loanKey = String(loan.id);
-               const loanCalls = marginCalls.filter(call => String(call.loanId ?? call.loan_id) === loanKey);
-               const loanCollateral = collateralPositions.filter(position => String(position.loanId ?? position.loan_id) === loanKey);
-               const loanRebates = rebates.filter(rebate => String(rebate.loanId ?? rebate.loan_id) === loanKey);
-               const cashPosted = loanCollateral.some(position =>
-                 String(position.assetType ?? position.asset_type ?? "").toUpperCase() === "CASH" &&
-                 ["POSTED", "CONFIRMED", "ACTIVE"].includes(String(position.status || "").toUpperCase())
-               );
-               const agreementId = loan.mslaId ?? loan.agreementId ?? loan.msla_id;
-               const agreement = agreements.find(item => String(item.id) === String(agreementId));
-               const rebateRecord = loanRebates.find(item => item.rebateRate != null || item.rebate_rate != null || item.rate != null);
-               const rebateRate = rebateRecord?.rebateRate ?? rebateRecord?.rebate_rate ?? rebateRecord?.rate ?? agreement?.rebateRate;
-               return (
-                 <div className="wf-selected-panel" key={loan.id}>
-                   <div className="wf-selected-header"><h3>Loan #{loan.id}</h3><span className="wf-status">{loan.status || "—"}</span></div>
-                   <div className="wf-form-grid">
-                     <div><small>Margin calls</small><strong>{loanCalls.length}</strong></div>
-                     <div><small>Collateral positions</small><strong>{loanCollateral.length}</strong></div>
-                     <div><small>Cash collateral rebate</small><strong>{cashPosted && rebateRate != null ? `${(Number(rebateRate) * 100).toFixed(4)}%` : cashPosted ? "Rate pending" : "Not applicable"}</strong></div>
+             {loans.length ? <div className="wf-loan-accordion">{loans.map(loan=>{
+               const loanKey=String(loan.id), expanded=String(expandedMarginLoanId)===loanKey;
+               const loanCalls=marginCalls.filter(call=>String(call.loanId??call.loan_id)===loanKey);
+               const loanCollateral=collateralPositions.filter(position=>String(position.loanId??position.loan_id)===loanKey);
+               const cashRows=loanCollateral.filter(position=>String(position.assetType??position.asset_type??"").toUpperCase()==="CASH");
+               const securityRows=loanCollateral.filter(position=>String(position.assetType??position.asset_type??"").toUpperCase()==="SECURITY");
+               const loanRebates=rebates.filter(rebate=>String(rebate.loanId??rebate.loan_id)===loanKey);
+               const cashPosted=cashRows.some(position=>["POSTED","CONFIRMED","ACTIVE"].includes(String(position.status||"").toUpperCase()));
+               const agreementId=loan.mslaId??loan.agreementId??loan.msla_id;
+               const agreement=agreements.find(item=>String(item.id)===String(agreementId));
+               const rebateRecord=loanRebates.find(item=>item.rebateRate!=null||item.rebate_rate!=null||item.rate!=null);
+               const rebateRate=rebateRecord?.rebateRate??rebateRecord?.rebate_rate??rebateRecord?.rate??agreement?.rebateRate??agreement?.rebate_rate;
+               return <section className="wf-loan-accordion-item" key={loan.id}>
+                 <button type="button" className="wf-loan-accordion-trigger" aria-expanded={expanded} onClick={()=>setExpandedMarginLoanId(expanded?null:loanKey)}>
+                   <span><strong>Loan #{loan.id}</strong><small>Security {loan.securityId??loan.security_id??"—"} · Quantity {loan.quantity??"—"} · Outstanding {loan.outstandingQuantity??loan.outstanding_quantity??loan.quantity??0}</small></span>
+                   <span className="wf-loan-accordion-meta"><em className="wf-status">{loan.status||"—"}</em><small>{loanCalls.length} calls · {loanCollateral.length} collateral</small><b>{expanded?"−":"+"}</b></span>
+                 </button>
+                 {expanded && <div className="wf-loan-accordion-body">
+                   <div className="wf-summary-grid">
+                     <div className="wf-summary-tile"><span>Margin calls</span><strong>{loanCalls.length}</strong></div><div className="wf-summary-tile"><span>Cash collateral</span><strong>{cashRows.length}</strong></div><div className="wf-summary-tile"><span>Security collateral</span><strong>{securityRows.length}</strong></div><div className="wf-summary-tile"><span>Cash collateral rebate</span><strong>{cashPosted&&rebateRate!=null?((Number(rebateRate)*100).toFixed(4)+"%"):cashPosted?"Rate pending":"Not applicable"}</strong></div>
                    </div>
-                   <h4>Margin calls for this loan</h4>
+                   <h4>Margin calls</h4>
                    <DataTable rows={loanCalls} columns={[
-                     { key: "id", label: "Call ID" },
-                     { key: "amount", label: "Call amount", render: r => money(r.amount) },
-                     { key: "fulfilledAmount", label: "Fulfilled", render: r => money(r.fulfilledAmount ?? r.fulfilled_amount) },
-                     { key: "reason", label: "Reason" },
-                     { key: "dueAt", label: "Due", render: r => formatDate(r.dueAt ?? r.due_at) },
-                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
+                     {key:"id",label:"Call ID"},{key:"amount",label:"Call amount",render:r=>money(r.amount)},{key:"fulfilledAmount",label:"Fulfilled",render:r=>money(r.fulfilledAmount??r.fulfilled_amount)},{key:"reason",label:"Reason"},{key:"dueAt",label:"Due",render:r=>formatDate(r.dueAt??r.due_at)},{key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>}
                    ]} empty="No margin calls have been raised for this loan." />
-                   {loanCalls.filter(call => ["OPEN", "PARTIALLY_FULFILLED", "OVERDUE"].includes(String(call.status || "").toUpperCase())).map(call => (
-                     <form className="wf-inline-form" key={call.id} onSubmit={e => respondToMarginCall(e, call)}>
-                       <div className="wf-subheading"><div><h4>Respond to margin call #{call.id}</h4><p>Outstanding call amount: {money(Math.max(0, Number(call.amount || 0) - Number(call.fulfilledAmount ?? call.fulfilled_amount ?? 0)))}</p></div></div>
-                       <div className="wf-form-grid">
-                         <Field label="Collateral asset type"><select name="assetType" value={marginAssetTypes[call.id] || "CASH"} onChange={e => setMarginAssetTypes(current => ({ ...current, [call.id]: e.target.value }))}><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
-                         <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" disabled={(marginAssetTypes[call.id] || "CASH") !== "CASH"} required={(marginAssetTypes[call.id] || "CASH") === "CASH"} placeholder="Enter cash amount" /></Field>
-                         <Field label="Security"><select name="securityId" defaultValue="" disabled={(marginAssetTypes[call.id] || "CASH") !== "SECURITY"} required={(marginAssetTypes[call.id] || "CASH") === "SECURITY"}><option value="">Select security</option>{securities.map(security => <option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
-                         <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" disabled={(marginAssetTypes[call.id] || "CASH") !== "SECURITY"} required={(marginAssetTypes[call.id] || "CASH") === "SECURITY"} /></Field>
-                       </div>
-                       <div className="wf-actions"><button className="wf-primary" type="submit" disabled={pledgingCallId === call.id}>{pledgingCallId === call.id ? "Submitting…" : "Submit collateral response"}</button></div>
-                     </form>
-                   ))}
-                   <h4>Collateral positions</h4>
-                   <DataTable rows={loanCollateral} columns={[
-                     { key: "id", label: "Position ID" },
-                     { key: "assetType", label: "Type", render: r => r.assetType ?? r.asset_type ?? "—" },
-                     { key: "securityId", label: "Security", render: r => r.securityId ?? r.security_id ?? "Cash" },
-                     { key: "quantity", label: "Quantity" },
-                     { key: "cashAmount", label: "Cash amount", render: r => r.cashAmount != null ? money(r.cashAmount) : "—" },
-                     { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-                   ]} empty="No collateral positions recorded for this loan." />
-                   {cashPosted && <>
-                     <h4>Cash collateral rebate</h4>
-                     <DataTable rows={loanRebates} columns={[
-                       { key: "rebateRate", label: "Rebate rate", render: r => { const rate = r.rebateRate ?? r.rebate_rate ?? r.rate; return rate == null ? "—" : `${(Number(rate) * 100).toFixed(4)}%`; } },
-                       { key: "amount", label: "Accrued rebate", render: r => money(r.amount) },
-                       { key: "accrualDate", label: "Accrual date", render: r => formatDate(r.accrualDate ?? r.accrual_date) },
-                       { key: "nextPaymentDate", label: "Next payment", render: r => formatDate(r.nextPaymentDate ?? r.paymentDate ?? r.payment_date) },                       { key: "status", label: "Status", render: r => <span className="wf-status">{r.status || "—"}</span> },
-                     ]} empty="Cash collateral is posted. Rebate accrual has not been reported yet." />
-                   </>}
-                 </div>
-               );
-             }) : <div className="wf-empty-state">Margin calls and collateral will appear here once loans are created.</div>}
+                   {loanCalls.filter(call=>["OPEN","PARTIALLY_FULFILLED","OVERDUE"].includes(String(call.status||"").toUpperCase())).map(call=><form className="wf-inline-form" key={call.id} onSubmit={e=>respondToMarginCall(e,call)}>
+                     <div className="wf-subheading"><div><h4>Respond to margin call #{call.id}</h4><p>Outstanding call amount: {money(Math.max(0,Number(call.amount||0)-Number(call.fulfilledAmount??call.fulfilled_amount??0)))}</p></div></div>
+                     <div className="wf-form-grid">
+                       <Field label="Collateral asset type"><select name="assetType" value={marginAssetTypes[call.id]||"CASH"} onChange={e=>setMarginAssetTypes(current=>({...current,[call.id]:e.target.value}))}><option value="CASH">Cash</option><option value="SECURITY">Security</option></select></Field>
+                       <Field label="Cash amount (INR)"><input name="cashAmount" type="number" min="0.01" step="0.01" disabled={(marginAssetTypes[call.id]||"CASH")!=="CASH"} required={(marginAssetTypes[call.id]||"CASH")==="CASH"}/></Field>
+                       <Field label="Security"><select name="securityId" defaultValue="" disabled={(marginAssetTypes[call.id]||"CASH")!=="SECURITY"} required={(marginAssetTypes[call.id]||"CASH")==="SECURITY"}><option value="">Select security</option>{securities.map(security=><option key={security.id} value={security.id}>{security.symbol} — {security.name}</option>)}</select></Field>
+                       <Field label="Security quantity"><input name="quantity" type="number" min="1" step="1" disabled={(marginAssetTypes[call.id]||"CASH")!=="SECURITY"} required={(marginAssetTypes[call.id]||"CASH")==="SECURITY"}/></Field>
+                     </div>
+                     <div className="wf-actions"><button className="wf-primary" type="submit" disabled={pledgingCallId===call.id}>{pledgingCallId===call.id?"Submitting…":"Submit collateral response"}</button></div>
+                   </form>)}
+                   <h4>Cash collateral positions</h4>
+                   <DataTable rows={cashRows} columns={[
+                     {key:"id",label:"Position ID"},{key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>},{key:"cashAmount",label:"Cash amount",render:r=>money(r.cashAmount??r.cash_amount)},{key:"haircut",label:"Haircut",render:r=>((Number(r.haircut??0)*100).toFixed(2)+"%")}
+                   ]} empty="No cash collateral positions for this loan." />
+                   <h4>Security collateral positions</h4>
+                   <DataTable rows={securityRows} columns={[
+                     {key:"id",label:"Position ID"},{key:"securityId",label:"Security ID",render:r=>r.securityId??r.security_id??"—"},{key:"securityName",label:"Security",render:r=>securities.find(s=>String(s.id)===String(r.securityId??r.security_id))?.name??"—"},{key:"quantity",label:"Quantity"},{key:"haircut",label:"Haircut",render:r=>((Number(r.haircut??0)*100).toFixed(2)+"%")},{key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>}
+                   ]} empty="No security collateral positions for this loan." />
+                   {cashPosted && <><h4>Cash collateral rebates</h4><DataTable rows={loanRebates} columns={[
+                     {key:"rebateRate",label:"Rebate rate",render:r=>{const rate=r.rebateRate??r.rebate_rate??r.rate;return rate==null?"—":((Number(rate)*100).toFixed(4)+"%");}},{key:"amount",label:"Accrued rebate",render:r=>money(r.amount)},{key:"accrualDate",label:"Accrual date",render:r=>formatDate(r.accrualDate??r.accrual_date)},{key:"nextPaymentDate",label:"Next payment",render:r=>formatDate(r.nextPaymentDate??r.paymentDate??r.payment_date)},{key:"status",label:"Status",render:r=><span className="wf-status">{r.status||"—"}</span>}
+                   ]} empty="Cash collateral is posted. Rebate accrual has not been reported yet." /></>}
+                 </div>}
+               </section>;
+             })}</div> : <div className="wf-empty-state">No loans are available yet.</div>}
            </div>}
          </section>
       )}
