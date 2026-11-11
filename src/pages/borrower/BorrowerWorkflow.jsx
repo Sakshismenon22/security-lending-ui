@@ -780,31 +780,33 @@ export default function BorrowerWorkflow() {
             <div className="wf-summary-tile"><span>Borrowed securities</span><strong>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length}</strong></div>
             <div className="wf-summary-tile"><span>Borrowed quantity</span><strong>{holdings.reduce((sum,h)=>sum+Number(h.borrowed_quantity??h.borrowedQuantity??0),0).toLocaleString("en-IN")}</strong></div>
           </div>
-          <div className="wf-work-tabs" role="tablist" aria-label="Holdings type">
-            <button type="button" role="tab" aria-selected={holdingsSubTab==="owned"} className={holdingsSubTab==="owned"?"active":""} onClick={()=>setHoldingsSubTab("owned")}>Owned positions <span>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length}</span></button>
-            <button type="button" role="tab" aria-selected={holdingsSubTab==="borrowed"} className={holdingsSubTab==="borrowed"?"active":""} onClick={()=>setHoldingsSubTab("borrowed")}>Borrowed positions <span>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length}</span></button>
-          </div>
-          {holdingsSubTab==="owned" ? <section className="wf-panel wf-holdings-panel">
-            <div className="wf-panel-header"><div><h2>Owned positions</h2><small>Unpledged and unblocked owned securities available for sale.</small></div></div>
-            <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
-              <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Owned qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available to sell</th><th>Action</th></tr></thead>
-              <tbody>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length ? holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).map(h=>{
-                const id=h.security_id??h.securityId??h.id, owned=Number(h.owned_quantity??h.ownedQuantity??0), pledged=Number(h.pledged_quantity??h.pledgedQuantity??0), blocked=Number(h.blocked_owned??h.blockedOwned??0), available=Number(h.available_owned_quantity??h.availableOwnedQuantity??Math.max(0,owned-pledged-blocked)), price=Number(h.price??0);
-                const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
-                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{owned.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("OWNED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
-              }) : <tr><td colSpan={10} className="wf-empty">No owned positions are recorded.</td></tr>}</tbody>
-            </table></div>
-          </section> : <section className="wf-panel wf-holdings-panel">
-            <div className="wf-panel-header"><div><h2>Borrowed positions</h2><small>Settled borrowed inventory. Locate approvals are not included as borrowed holdings.</small></div></div>
-            <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
-              <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Borrowed qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available borrowed</th><th>Action</th></tr></thead>
-              <tbody>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length ? holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).map(h=>{
-                const id=h.security_id??h.securityId??h.id, borrowed=Number(h.borrowed_quantity??h.borrowedQuantity??0), pledged=Number(h.pledged_borrowed_quantity??h.pledgedBorrowedQuantity??0), blocked=Number(h.blocked_borrowed??h.blockedBorrowed??0), available=Number(h.available_borrowed_quantity??h.availableBorrowedQuantity??Math.max(0,borrowed-blocked)), price=Number(h.price??0);
-                const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
-                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
-              }) : <tr><td colSpan={10} className="wf-empty">No borrowed positions are recorded.</td></tr>}</tbody>
-            </table></div>
-          </section>}
+          <section className="wf-panel wf-holdings-workspace">
+            <div className="wf-work-tabs" role="tablist" aria-label="Holdings type">
+              <button type="button" role="tab" aria-selected={holdingsSubTab==="owned"} className={holdingsSubTab==="owned"?"active":""} onClick={()=>setHoldingsSubTab("owned")}>Owned positions <span>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length}</span></button>
+              <button type="button" role="tab" aria-selected={holdingsSubTab==="borrowed"} className={holdingsSubTab==="borrowed"?"active":""} onClick={()=>setHoldingsSubTab("borrowed")}>Borrowed positions <span>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length}</span></button>
+            </div>
+            {holdingsSubTab==="owned" ? <div className="wf-holdings-panel-content">
+              <div className="wf-panel-header"><div><h2>Owned positions</h2><small>Unpledged and unblocked owned securities available for sale.</small></div></div>
+              <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
+                <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Owned qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available to sell</th><th>Action</th></tr></thead>
+                <tbody>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length ? holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).map(h=>{
+                  const id=h.security_id??h.securityId??h.id, owned=Number(h.owned_quantity??h.ownedQuantity??0), pledged=Number(h.pledged_quantity??h.pledgedQuantity??0), blocked=Number(h.blocked_owned??h.blockedOwned??0), available=Number(h.available_owned_quantity??h.availableOwnedQuantity??Math.max(0,owned-pledged-blocked)), price=Number(h.price??0);
+                  const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
+                  return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{owned.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("OWNED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
+                }) : <tr><td colSpan={10} className="wf-empty">No owned positions are recorded.</td></tr>}</tbody>
+              </table></div>
+            </div> : <div className="wf-holdings-panel-content">
+              <div className="wf-panel-header"><div><h2>Borrowed positions</h2><small>Settled borrowed inventory. Locate approvals are not included as borrowed holdings.</small></div></div>
+              <div className="wf-table-wrap wf-holdings-table-wrap"><table className="wf-table">
+                <thead><tr><th>Security ID</th><th>Symbol</th><th>Security name</th><th>Price</th><th>Price as of</th><th>Borrowed qty</th><th>Pledged qty</th><th>Blocked qty</th><th>Available borrowed</th><th>Action</th></tr></thead>
+                <tbody>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length ? holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).map(h=>{
+                  const id=h.security_id??h.securityId??h.id, borrowed=Number(h.borrowed_quantity??h.borrowedQuantity??0), pledged=Number(h.pledged_borrowed_quantity??h.pledgedBorrowedQuantity??0), blocked=Number(h.blocked_borrowed??h.blockedBorrowed??0), available=Number(h.available_borrowed_quantity??h.availableBorrowedQuantity??Math.max(0,borrowed-blocked)), price=Number(h.price??0);
+                  const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
+                  return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
+                }) : <tr><td colSpan={10} className="wf-empty">No borrowed positions are recorded.</td></tr>}</tbody>
+              </table></div>
+            </div>}
+          </section>
         </section>
       )}
 
