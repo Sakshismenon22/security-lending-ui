@@ -664,7 +664,7 @@ export default function BorrowerWorkflow() {
   }
  
   const filteredSecurities = securities.filter((s) =>
-    `${s.symbol || ""} ${s.name || ""}`
+    `${s.symbol ?? s.ticker ?? ""} ${s.name ?? s.description ?? ""} ${s.isin ?? s.ISIN ?? s.isinCode ?? ""} ${s.id ?? s.securityId ?? ""}`
       .toLowerCase().includes(securitySearch.toLowerCase())
   );
  
@@ -830,36 +830,63 @@ export default function BorrowerWorkflow() {
       {!loading && activeTab === "trading" && (
         <section className="wf-content wf-trading-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">MARKETS / ORDER ENTRY</div><h2>Trading</h2><p>Select a watchlist security to inspect its price history and prepare a buy or sell ticket.</p></div></div>
-          <div className="wf-trading-layout">
-            <section className="wf-panel wf-watchlist-panel">
-              <div className="wf-panel-header"><div><h2>Watchlist</h2><small>{watchlist.length} securities</small></div><button className="wf-secondary" onClick={loadAll}>↻</button></div>
-              <div className="wf-watchlist-items">
-                {watchlist.length ? watchlist.map((item) => {
-                  const security = securities.find((s) => String(s.id) === String(item.securityId ?? item.id)) ?? item;
-                  return <button key={security.id} className={String(selectedTradeSecurity?.id) === String(security.id) ? "selected" : ""} onClick={() => selectTradeSecurity(security)}>
-                    <span><strong>{security.symbol ?? security.ticker ?? `Security ${security.id}`}</strong><small>{security.name ?? security.description ?? "Listed security"}</small></span>
-                    <span className="wf-watch-chevron">›</span>
-                  </button>;
-                }) : <div className="wf-empty-state">Your watchlist is empty. Add securities to your watchlist to see them here.</div>}
+          <div className="wf-trading-layout wf-trading-directory-layout">
+            <section className="wf-panel wf-watchlist-panel wf-market-universe">
+              <div className="wf-panel-header wf-market-universe-header">
+                <div><h2>Security watchlist</h2><small>{filteredSecurities.length} of {securities.length} securities · {watchlist.length} added</small></div>
+                <button className="wf-secondary" type="button" onClick={loadAll} title="Refresh securities">↻</button>
+              </div>
+              <input className="wf-security-search wf-market-search" value={securitySearch} onChange={(e) => setSecuritySearch(e.target.value)} placeholder="Search symbol, name, ISIN or security ID…" />
+              <div className="wf-market-table-wrap">
+                <table className="wf-market-table">
+                  <thead><tr><th>Security / Symbol</th><th>ISIN</th><th>Security ID</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {filteredSecurities.length ? filteredSecurities.map((security) => {
+                      const added = isInWatchlist(security);
+                      const selected = String(selectedTradeSecurity?.id) === String(security.id);
+                      return <tr key={security.id} className={selected ? "selected" : ""}>
+                        <td>
+                          <button type="button" className="wf-market-security-select" onClick={() => selectTradeSecurity(security)} title="Select security and open order ticket">
+                            <strong>{security.symbol ?? security.ticker ?? "—"}</strong>
+                            <small>{security.name ?? security.description ?? "Listed security"}</small>
+                          </button>
+                        </td>
+                        <td className="wf-market-isin">{security.isin ?? security.ISIN ?? security.isinCode ?? "—"}</td>
+                        <td className="wf-market-id">{security.id ?? security.securityId ?? "—"}</td>
+                        <td>
+                          <div className="wf-market-actions">
+                            <button type="button" className={added ? "wf-market-icon added" : "wf-market-icon add"} disabled={added || addingSecurityId === security.id} onClick={() => addToWatchlist(security)} title={added ? "Already in watchlist" : "Add to watchlist"} aria-label={added ? "Already in watchlist" : "Add to watchlist"}>
+                              {added ? "✓" : "+"}
+                            </button>
+                            <button type="button" className="wf-market-icon chart" onClick={() => selectTradeSecurity(security)} title="View chart" aria-label={`View chart for ${security.symbol ?? security.name ?? "security"}`}>
+                              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16.5V3.5M3 16.5H18M6 13l3-4 3 2 5-6" /></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>;
+                    }) : <tr><td colSpan={4} className="wf-empty">No securities match your search.</td></tr>}
+                  </tbody>
+                </table>
               </div>
             </section>
             <div className="wf-trading-main">
               <section className="wf-chart-panel">
-                {selectedTradeSecurity ? <SecurityPriceChart security={selectedTradeSecurity} candles={tradeCandles} loading={historyLoading} /> : <div className="wf-panel wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose an instrument from your watchlist to display its candlestick chart.</p></div>}
+                {selectedTradeSecurity ? <SecurityPriceChart security={selectedTradeSecurity} candles={tradeCandles} loading={historyLoading} /> : <div className="wf-panel wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose a security from the directory to display its candlestick chart and load the order ticket.</p></div>}
               </section>
               <section className="wf-panel wf-order-panel">
                 <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Paper execution</span></div>
                 <div className="wf-account-balance"><span>Available cash balance</span><strong>{money(account?.available)}</strong></div>
                 <div className="wf-trade-switch"><button type="button" className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button type="button" className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
                 <form onSubmit={submitTrade}><div className="wf-form-grid">
-                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from watchlist"/></Field>                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
+                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from securities"/></Field>
+                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
+                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
                   {tradeOrderType === "LIMIT" && <Field label="Limit price"><input type="number" min="0.000001" step="0.01" required value={tradeLimitPrice} onChange={e=>setTradeLimitPrice(e.target.value)} placeholder="Enter limit price"/></Field>}
                   <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
-                  <Field label="Position source"><select value={tradeSource} onChange={e=>setTradeSource(e.target.value)}><option value="OWNED">Owned position / cash</option><option value="BORROWED">Borrowed position / short cover</option></select></Field>
+                  <Field label="Position source"><select value={tradeSource} onChange={e=>setTradeSource(e.target.value)}><option value="OWNED">Owned position / cash</option><option value="BORROWED">Borrowed position</option></select></Field>
                 </div>
-                <div className="wf-order-estimate"><div><span>Estimated total</span><strong>{money(estimatedOrderTotal)}</strong></div><small>{money(currentTradePrice)} × {Number(tradeQuantity || 0).toLocaleString("en-IN")} units</small></div>
-                <div className="wf-info">Market orders are paper-executed against the latest completed one-minute close. Limit orders remain pending until the market price reaches the limit. The backend validates cash or sellable quantity and records balance transactions.</div>
-                <div className="wf-actions"><button className="wf-primary" type="submit" disabled={!selectedTradeSecurity || !currentTradePrice || !tradeQuantity || orderSubmitting || (tradeOrderType === "LIMIT" && !tradeLimitPrice)}>{orderSubmitting ? "Submitting…" : `${tradeSide} ${tradeOrderType} order`}</button></div></form>
+                <div className="wf-order-estimate"><div><span>Estimated order value</span><strong>{money(estimatedOrderTotal)}</strong></div><small>Calculated from the latest available completed-minute price.</small></div>
+                <button className="wf-primary wf-submit-order" type="submit" disabled={orderSubmitting || !selectedTradeSecurity || !currentTradePrice}>{orderSubmitting ? "Submitting…" : `Place ${tradeSide.toLowerCase()} order`}</button></form>
               </section>
             </div>
           </div>
