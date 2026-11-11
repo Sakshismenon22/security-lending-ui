@@ -18,3 +18,6 @@
 .wf-tv-chart.is-collapsed .wf-tv-toolbar { border-bottom: 0; }
 .wf-tv-chart.is-maximized .wf-tv-empty { flex: 1; }
 @media (max-width: 620px) { .wf-tv-hint { display: none; } .wf-tv-canvas { height: 280px; } .wf-tv-chart.is-maximized { inset: 5px; } }
+
+.wf-tv-stream-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #d69b32; vertical-align: middle; }
+.wf-tv-stream-dot.live { background: #0aa879; box-shadow: 0 0 0 3px rgba(10,168,121,.12); }
