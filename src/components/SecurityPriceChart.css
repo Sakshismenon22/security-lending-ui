@@ -21,3 +21,29 @@
 
 .wf-tv-stream-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #d69b32; vertical-align: middle; }
 .wf-tv-stream-dot.live { background: #0aa879; box-shadow: 0 0 0 3px rgba(10,168,121,.12); }
+
+
+/* Match the portfolio reference: clean chart chrome and restrained Kite-blue controls */
+.wf-tv-chart { border-color:#e2e6eb; border-radius:4px; box-shadow:none; }
+.wf-tv-toolbar { padding:9px 12px; border-bottom-color:#e7eaee; }
+.wf-tv-instrument strong { color:#35485e; font-size:12px; }
+.wf-tv-instrument span { color:#8995a2; }
+.wf-tv-actions button {
+  border-color:#dfe5eb; border-radius:3px; color:#68798b; background:#fff;
+}
+.wf-tv-actions button:hover {
+  color:#387ed1; border-color:#b8d0eb; background:#f4f8fd;
+}
+.wf-tv-subtoolbar { border-bottom-color:#edf0f3; }
+.wf-tv-ranges button { color:#758392; border-radius:3px; }
+.wf-tv-ranges button:hover,.wf-tv-ranges button.active {
+  color:#387ed1; background:#edf4fc;
+}
+.wf-tv-hint { color:#929eaa; }
+.wf-tv-stream-dot.live { background:#219653; box-shadow:0 0 0 3px rgba(33,150,83,.10); }
+.wf-tv-empty { color:#8995a2; }
+.wf-ag-grid-wrap .ag-header { background:#f0f3f6; border-bottom-color:#e0e5ea; }
+.wf-ag-grid-wrap .ag-header-cell-text { color:#68798b; font-size:9px; }
+.wf-ag-grid-wrap .ag-cell { color:#35485e; font-size:10px; }
+.wf-ag-grid-wrap .ag-row-hover { background:#f6f9fc!important; }
+.wf-ag-grid-wrap .ag-row-selected { background:#edf4fc!important; }
