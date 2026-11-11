@@ -45,6 +45,7 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
   const hostRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
+  const renderedDataRef = useRef([]);
   const [range, setRange] = useState("ALL");
   const [collapsed, setCollapsed] = useState(false);
   const [maximized, setMaximized] = useState(false);
@@ -187,6 +188,7 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
       candleSeries.setData(visibleData);
       chart.timeScale().fitContent();
     }
+    renderedDataRef.current = visibleData;
     chartRef.current = chart;
     seriesRef.current = candleSeries;
 
@@ -201,13 +203,47 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      renderedDataRef.current = [];
     };
   }, [collapsed, maximized, loading, hasVisibleData]);
 
   useEffect(() => {
-    if (!chartRef.current || !visibleData.length) return;
-    if (seriesRef.current) seriesRef.current.setData(visibleData);
-    chartRef.current.timeScale().fitContent();
+    const series = seriesRef.current;
+    if (!series || !visibleData.length) return;
+
+    const previous = renderedDataRef.current;
+    if (!previous.length) {
+      series.setData(visibleData);
+      chartRef.current?.timeScale().fitContent();
+      renderedDataRef.current = visibleData;
+      return;
+    }
+
+    const samePrefix = (length) => previous.slice(0, length).every((item, index) => {
+      const next = visibleData[index];
+      return next && item.time === next.time;
+    });
+
+    const previousLast = previous[previous.length - 1];
+    const nextLast = visibleData[visibleData.length - 1];
+    const isSingleCandleUpdate = visibleData.length === previous.length
+      && samePrefix(previous.length - 1)
+      && previousLast.time === nextLast.time;
+    const isSingleCandleAppend = visibleData.length === previous.length + 1
+      && samePrefix(previous.length)
+      && nextLast.time > previousLast.time;
+
+    if (isSingleCandleUpdate || isSingleCandleAppend) {
+      // Lightweight Charts updates the existing minute when timestamps match,
+      // and appends a new minute when the timestamp advances.
+      series.update(nextLast);
+    } else {
+      // Range changes or historical corrections require a full data refresh.
+      // Do not call fitContent here: live updates must not reset the user's viewport.
+      series.setData(visibleData);
+    }
+
+    renderedDataRef.current = visibleData;
   }, [visibleData]);
 
   return (
