@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createChart, CandlestickSeries, ColorType } from "lightweight-charts";
+import { Client } from "@stomp/stompjs";
 import "./SecurityPriceChart.css";
 
 function toChartTime(value) {
@@ -43,11 +44,14 @@ const ranges = [
 export default function SecurityPriceChart({ security, candles = [], loading = false }) {
   const hostRef = useRef(null);
   const chartRef = useRef(null);
+  const seriesRef = useRef(null);
   const [range, setRange] = useState("ALL");
   const [collapsed, setCollapsed] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [liveCandles, setLiveCandles] = useState([]);
+  const [streamStatus, setStreamStatus] = useState("CONNECTING");
 
-  const chartData = useMemo(() => candles
+  const historicalData = useMemo(() => candles
     .map((candle) => ({
       time: toChartTime(candle.date),
       open: Number(candle.open),
@@ -60,6 +64,77 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
     .filter((candle, index, rows) => index === 0 || candle.time > rows[index - 1].time),
   [candles]);
 
+  useEffect(() => {
+    setLiveCandles(historicalData);
+  }, [historicalData, security?.id]);
+
+  useEffect(() => {
+    const symbol = security?.symbol ?? security?.ticker;
+    if (!symbol) return undefined;
+
+    const marketDataHttpUrl = import.meta.env.VITE_MARKET_DATA_API || "http://localhost:8080";
+    const websocketUrl = import.meta.env.VITE_MARKET_DATA_WS
+      || marketDataHttpUrl.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:") + "/ws";
+    const client = new Client({
+      brokerURL: websocketUrl,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      onConnect: () => {
+        setStreamStatus("LIVE");
+        client.subscribe(`/topic/price/${symbol}`, (message) => {
+          try {
+            const update = JSON.parse(message.body);
+            if (update.symbol && String(update.symbol).toUpperCase() !== String(symbol).toUpperCase()) return;
+            const candle = {
+              time: toChartTime(update.tradeDateTimestamp ?? update.tradedDateTimestamp ?? update.timestamp),
+              open: Number(update.open),
+              high: Number(update.high),
+              low: Number(update.low),
+              close: Number(update.close),
+            };
+            if (!candle.time || ![candle.open, candle.high, candle.low, candle.close].every((value) => Number.isFinite(value) && value > 0)) return;
+            setLiveCandles((previous) => {
+              const next = [...previous];
+              const last = next[next.length - 1];
+              if (last && candle.time < last.time) {
+                const existingIndex = next.findIndex((item) => item.time === candle.time);
+                if (existingIndex >= 0) next[existingIndex] = candle;
+                else return previous;
+              } else if (last && candle.time === last.time) {
+                next[next.length - 1] = candle;
+              } else {
+                next.push(candle);
+              }
+              return next;
+            });
+          } catch (error) {
+            console.error("Unable to process market-price WebSocket message:", error);
+          }
+        });
+      },
+      onDisconnect: () => setStreamStatus("CONNECTING"),
+      onWebSocketClose: () => setStreamStatus("RECONNECTING"),
+      onStompError: (frame) => {
+        console.error("Market-price STOMP error:", frame.headers?.message, frame.body);
+        setStreamStatus("RECONNECTING");
+      },
+      onWebSocketError: (error) => {
+        console.error("Market-price WebSocket error:", error);
+        setStreamStatus("RECONNECTING");
+      },
+    });
+
+    setStreamStatus("CONNECTING");
+    client.activate();
+    return () => {
+      setStreamStatus("CONNECTING");
+      client.deactivate();
+    };
+  }, [security?.id, security?.symbol, security?.ticker]);
+
+  const chartData = liveCandles;
+
   const visibleData = useMemo(() => {
     const selected = ranges.find((item) => item.label === range);
     if (!selected?.days || !chartData.length) return chartData;
@@ -68,7 +143,7 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
   }, [chartData, range]);
 
   useEffect(() => {
-    if (collapsed || !hostRef.current || !visibleData.length) return undefined;
+    if (collapsed || !hostRef.current) return undefined;
 
     const chart = createChart(hostRef.current, {
       width: hostRef.current.clientWidth,
@@ -98,16 +173,20 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
       handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true },
     });
-    chart.addSeries(CandlestickSeries, {
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#089b72",
       downColor: "#df5965",
       borderUpColor: "#089b72",
       borderDownColor: "#df5965",
       wickUpColor: "#089b72",
       wickDownColor: "#df5965",
-    }).setData(visibleData);
-    chart.timeScale().fitContent();
+    });
+    if (visibleData.length) {
+      candleSeries.setData(visibleData);
+      chart.timeScale().fitContent();
+    }
     chartRef.current = chart;
+    seriesRef.current = candleSeries;
 
     const observer = new ResizeObserver((entries) => {
       const { width } = entries[0].contentRect;
@@ -119,8 +198,15 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
       observer.disconnect();
       chart.remove();
       chartRef.current = null;
+      seriesRef.current = null;
     };
-  }, [visibleData, collapsed, maximized]);
+  }, [collapsed, maximized]);
+
+  useEffect(() => {
+    if (!chartRef.current || !visibleData.length) return;
+    if (seriesRef.current) seriesRef.current.setData(visibleData);
+    chartRef.current.timeScale().fitContent();
+  }, [visibleData]);
 
   return (
     <section className={`wf-tv-chart ${collapsed ? "is-collapsed" : ""} ${maximized ? "is-maximized" : ""}`}>
@@ -139,7 +225,7 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
           <div className="wf-tv-ranges" aria-label="Chart time range">
             {ranges.map((item) => <button type="button" key={item.label} className={range === item.label ? "active" : ""} onClick={() => setRange(item.label)}>{item.label}</button>)}
           </div>
-          <span className="wf-tv-hint">Scroll to zoom · Drag to pan</span>
+          <span className="wf-tv-hint"><i className={`wf-tv-stream-dot ${streamStatus === "LIVE" ? "live" : ""}`} />{streamStatus === "LIVE" ? "Live feed connected" : streamStatus === "RECONNECTING" ? "Reconnecting to live feed…" : "Connecting to live feed…"} · Scroll to zoom · Drag to pan</span>
         </div>
         {loading ? <div className="wf-tv-empty">Loading price history…</div> : visibleData.length ? <div className="wf-tv-canvas" ref={hostRef} /> : <div className="wf-tv-empty">No candlestick history is available for this security.</div>}
       </>}
