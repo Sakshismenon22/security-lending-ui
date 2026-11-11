@@ -171,9 +171,11 @@ export default function BorrowerWorkflow() {
   );
  
   const confirmedReservations = useMemo(
-    () => reservations.filter((x) =>
-      ["CONFIRMED", "APPROVED", "RESERVED"].includes(
-        String(x.status || "").toUpperCase()
+    () => reservations.filter((reservation) =>
+      ["ACTIVE", "CONFIRMED", "APPROVED", "RESERVED"].includes(
+        String(reservation.status ?? reservation.reservationStatus ?? reservation.reservation_status ?? "")
+          .trim()
+          .toUpperCase()
       )
     ),
     [reservations]
