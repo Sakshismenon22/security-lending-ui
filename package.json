@@ -15,7 +15,8 @@
     "axios": "^1.21.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "lightweight-charts": "^5.0.0"
+    "lightweight-charts": "^5.0.0",
+    "@stomp/stompjs": "^7.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
