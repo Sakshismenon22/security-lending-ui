@@ -762,7 +762,7 @@ export default function BorrowerWorkflow() {
           </section>
           <div className="wf-dashboard-grid">
             <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
-            <button className="wf-dashboard-card" onClick={() => setActiveTab("securities")}><span>INSTRUMENT DIRECTORY</span><strong>Securities</strong><small>Browse instruments and add them to your watchlist</small><b>Browse securities →</b></button>
+            <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Search securities</strong><small>Find instruments and add them to your watchlist</small><b>Open security search →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("locates")}><span>SECURITIES FINANCE</span><strong>Borrow / Locate</strong><small>Submit locate requests to connected lenders</small><b>View requests →</b></button>
             <button className="wf-dashboard-card" onClick={() => setActiveTab("loans")}><span>OPERATIONS</span><strong>Loan requests</strong><small>Create and monitor securities borrowing loans</small><b>View loans →</b></button>
           </div>
