@@ -221,7 +221,12 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
 
     const samePrefix = (length) => previous.slice(0, length).every((item, index) => {
       const next = visibleData[index];
-      return next && item.time === next.time;
+      return next
+        && item.time === next.time
+        && item.open === next.open
+        && item.high === next.high
+        && item.low === next.low
+        && item.close === next.close;
     });
 
     const previousLast = previous[previous.length - 1];
