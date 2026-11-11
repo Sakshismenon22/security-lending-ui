@@ -677,20 +677,6 @@ export default function BorrowerWorkflow() {
  
   return (
     <main className="wf-shell">
-      <header className="wf-header">
-        <div>
-          <div className="wf-eyebrow">SECURITIES LENDING / BORROWER</div>
-          <h1>Borrower Operations</h1>
-          <p>Manage agreements, locate requests, reservations and loans.</p>
-        </div>
-        <div className="wf-header-right">
-          <span className="wf-org-chip">Organization #{orgId}</span>
-          <button className="wf-secondary" onClick={loadAll}>
-            ↻ Refresh
-          </button>
-        </div>
-      </header>
-
       <div className="wf-workspace">
         <aside className={`wf-sidebar ${sidebarCollapsed ? "is-collapsed" : ""}`}>
           <button type="button" className="wf-sidebar-toggle" onClick={() => setSidebarCollapsed(value => !value)} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? "›" : "‹"}</button>
@@ -717,28 +703,6 @@ export default function BorrowerWorkflow() {
           <div className="wf-sidebar-bottom"><div className="wf-sidebar-org-icon">▥</div><div><strong>Borrower Organization</strong><small>Organization #{orgId}</small></div></div>
         </aside>
         <div className="wf-main-content">
-      <section className="wf-metrics">
-        <div className="wf-metric">
-          <span>Active agreements</span>
-          <strong>{agreements.length}</strong>
-          <small>MSLA records</small>
-        </div>
-        <div className="wf-metric">
-          <span>Locate requests</span>
-          <strong>{locates.length}</strong>
-          <small>All submitted requests</small>
-        </div>
-        <div className="wf-metric">
-          <span>Reservations</span>
-          <strong>{reservations.length}</strong>
-          <small>All reservation records</small>
-        </div>
-        <div className="wf-metric">
-          <span>Loan requests</span>
-          <strong>{loans.length}</strong>
-          <small>All loan records</small>
-        </div>
-      </section>
  
       {notice && (
         <div className={`wf-notice ${notice.type}`}>{notice.message}</div>
@@ -747,6 +711,12 @@ export default function BorrowerWorkflow() {
       {!loading && activeTab === "dashboard" && (
         <section className="wf-content wf-dashboard-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
+          <div className="wf-inline-metrics" aria-label="Borrower activity summary">
+            <span><strong>Active agreements:</strong> {agreements.length}</span>
+            <span><strong>Locate requests:</strong> {locates.length}</span>
+            <span><strong>Reservations:</strong> {reservations.length}</span>
+            <span><strong>Loan requests:</strong> {loans.length}</span>
+          </div>
           <section className="wf-panel wf-recent-activity">
             <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
             <div className="wf-summary-grid">
