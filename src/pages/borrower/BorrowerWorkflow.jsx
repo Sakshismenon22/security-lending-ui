@@ -801,7 +801,14 @@ export default function BorrowerWorkflow() {
               <tbody>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length ? holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).map(h=>{
                 const id=h.security_id??h.securityId??h.id, borrowed=Number(h.borrowed_quantity??h.borrowedQuantity??0), pledged=Number(h.pledged_borrowed_quantity??h.pledgedBorrowedQuantity??0), blocked=Number(h.blocked_borrowed??h.blockedBorrowed??0), available=Number(h.available_borrowed_quantity??h.availableBorrowedQuantity??Math.max(0,borrowed-blocked)), price=Number(h.price??0);
                 const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
-                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{f      {!loading && activeTab === "trading" && (
+                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
+              }) : <tr><td colSpan={10} className="wf-empty">No borrowed positions are recorded.</td></tr>}</tbody>
+            </table></div>
+          </section>}
+        </section>
+      )}
+
+      {!loading && activeTab === "trading" && (
         <section className="wf-content wf-trading-view">
           <div className="wf-section-heading"><div><div className="wf-eyebrow">MARKETS / ORDER ENTRY</div><h2>Trading</h2><p>Search the security master or select an instrument from your watchlist to prepare an order.</p></div></div>
           <div className="wf-trading-layout wf-watchlist-order-layout">
@@ -827,7 +834,7 @@ export default function BorrowerWorkflow() {
                       }) : <tr><td colSpan={4} className="wf-empty">No securities match your search.</td></tr>
                     ) : (
                       watchlist.length ? watchlist.map((item) => {
-                        const security = securities.find((s) => String(s.id) === String(item.securityId ?? item.security?.id ?? item.id)) ?? item.security ?? item;
+                        const security = securities.find((candidate) => String(candidate.id) === String(item.securityId ?? item.security?.id ?? item.id)) ?? item.security ?? item;
                         const selected = String(selectedTradeSecurity?.id) === String(security.id);
                         return <tr key={security.id} className={selected ? "selected" : ""}>
                           <td><button type="button" className="wf-market-security-select" onClick={() => selectTradeSecurity(security)} title="Load security details into order ticket"><strong>{security.symbol ?? security.ticker ?? "—"}</strong><small>{security.name ?? security.description ?? "Listed security"}</small></button></td>
@@ -857,35 +864,6 @@ export default function BorrowerWorkflow() {
               {selectedTradeSecurity ? <SecurityPriceChart security={selectedTradeSecurity} candles={tradeCandles} loading={historyLoading} /> : <div className="wf-chart-placeholder"><h3>No security selected</h3><p>Return to Trading and choose a security from your watchlist.</p></div>}
             </section>
             {renderOrderTicket()}
-          </div>
-        </section>
-      )}
-
-h your search.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-            <div className="wf-trading-main">
-              <section className="wf-chart-panel">
-                {selectedTradeSecurity ? <SecurityPriceChart security={selectedTradeSecurity} candles={tradeCandles} loading={historyLoading} /> : <div className="wf-panel wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose a security from the directory to display its candlestick chart and load the order ticket.</p></div>}
-              </section>
-              <section className="wf-panel wf-order-panel">
-                <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Paper execution</span></div>
-                <div className="wf-account-balance"><span>Available cash balance</span><strong>{money(account?.available)}</strong></div>
-                <div className="wf-trade-switch"><button type="button" className={tradeSide==="BUY"?"buy active":"buy"} onClick={()=>setTradeSide("BUY")}>Buy</button><button type="button" className={tradeSide==="SELL"?"sell active":"sell"} onClick={()=>setTradeSide("SELL")}>Sell</button></div>
-                <form onSubmit={submitTrade}><div className="wf-form-grid">
-                  <Field label="Security"><input readOnly value={selectedTradeSecurity?.symbol ?? selectedTradeSecurity?.ticker ?? ""} placeholder="Select from securities"/></Field>
-                  <Field label="Current price"><input readOnly value={currentTradePrice > 0 ? money(currentTradePrice) : "Price unavailable"}/></Field>
-                  <Field label="Order type"><select value={tradeOrderType} onChange={e=>setTradeOrderType(e.target.value)}><option value="MARKET">Market</option><option value="LIMIT">Limit</option></select></Field>
-                  {tradeOrderType === "LIMIT" && <Field label="Limit price"><input type="number" min="0.000001" step="0.01" required value={tradeLimitPrice} onChange={e=>setTradeLimitPrice(e.target.value)} placeholder="Enter limit price"/></Field>}
-                  <Field label="Quantity"><input type="number" min="1" step="1" required value={tradeQuantity} onChange={e=>setTradeQuantity(e.target.value)} placeholder="Enter quantity"/></Field>
-                  <Field label="Position source"><select value={tradeSource} onChange={e=>setTradeSource(e.target.value)}><option value="OWNED">Owned position / cash</option><option value="BORROWED">Borrowed position</option></select></Field>
-                </div>
-                <div className="wf-order-estimate"><div><span>Estimated order value</span><strong>{money(estimatedOrderTotal)}</strong></div><small>Calculated from the latest available completed-minute price.</small></div>
-                <button className="wf-primary wf-submit-order" type="submit" disabled={orderSubmitting || !selectedTradeSecurity || !currentTradePrice}>{orderSubmitting ? "Submitting…" : `Place ${tradeSide.toLowerCase()} order`}</button></form>
-              </section>
-            </div>
           </div>
         </section>
       )}
