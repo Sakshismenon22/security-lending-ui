@@ -11,6 +11,26 @@ function toChartTime(value) {
   return Number.isNaN(parsed.getTime()) ? null : Math.floor(parsed.getTime() / 1000);
 }
 
+const IST_TIME_ZONE = "Asia/Kolkata";
+
+function formatIstTime(time) {
+  const epochSeconds = typeof time === "number"
+    ? time
+    : time && typeof time === "object" && "year" in time
+      ? Date.UTC(time.year, time.month - 1, time.day) / 1000
+      : null;
+  if (epochSeconds == null) return "";
+  return new Date(epochSeconds * 1000).toLocaleString("en-IN", {
+    timeZone: IST_TIME_ZONE,
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 const ranges = [
   { label: "1D", days: 1 },
   { label: "1W", days: 7 },
@@ -59,12 +79,21 @@ export default function SecurityPriceChart({ security, candles = [], loading = f
         fontFamily: "Inter, Arial, sans-serif",
         fontSize: 11,
       },
+      localization: {
+        locale: "en-IN",
+        timeFormatter: formatIstTime,
+      },
       grid: {
         vertLines: { color: "#f0f3f6" },
         horzLines: { color: "#edf1f5" },
       },
       rightPriceScale: { borderColor: "#e4eaf0", scaleMargins: { top: 0.12, bottom: 0.12 } },
-      timeScale: { borderColor: "#e4eaf0", timeVisible: true, secondsVisible: false },
+      timeScale: {
+        borderColor: "#e4eaf0",
+        timeVisible: true,
+        secondsVisible: false,
+        tickMarkFormatter: (time) => formatIstTime(time),
+      },
       crosshair: { mode: 1 },
       handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true },
