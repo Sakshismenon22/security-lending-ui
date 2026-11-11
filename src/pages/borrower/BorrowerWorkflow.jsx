@@ -930,22 +930,25 @@ export default function BorrowerWorkflow() {
               <DataTable rows={collateralPositions} columns={[
                 {key:"id",label:"Position ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
                 {key:"assetType",label:"Asset",render:p=>p.assetType??p.asset_type??"—"},
-                {key:"securityId",label:"Security",render:p=>p.securityId??p.security_id??"—"},
-                {key:"quantity",label:"Quantity",render:p=>String(p.assetType??p.asset_type).toUpperCase()==="SECURITY"?(p.quantity??"—"):"—"},
+                {key:"securityId",label:"Security",render:p=>{const id=p.securityId??p.security_id;const security=securities.find(s=>String(s.id)===String(id));return String(p.assetType??p.asset_type).toUpperCase()==="SECURITY"?(security?security.symbol+" · "+security.name:(id??"—")):"Cash";}},
+                {key:"quantity",label:"Quantity",render:p=>String(p.assetType??p.asset_type).toUpperCase()==="SECURITY"?Number(p.quantity??p.securityQuantity??p.security_quantity??0).toLocaleString("en-IN"):"—"},
                 {key:"cashAmount",label:"Cash amount",render:p=>String(p.assetType??p.asset_type).toUpperCase()==="CASH"?money(p.cashAmount??p.cash_amount):"—"},
-                {key:"haircut",label:"Haircut",render:p=>p.haircut==null?"—":`${(Number(p.haircut)*100).toFixed(2)}%`},
+                {key:"haircut",label:"Haircut",render:p=>{const raw=p.haircut??p.haircutRate??p.haircut_rate;return raw==null?"—":(Number(raw)*100).toFixed(2)+"%";}},
                 {key:"status",label:"Status",render:p=><span className="wf-status">{p.status||"—"}</span>},
                 {key:"action",label:"Action",render:p=><button type="button" className="wf-small-button" disabled={!["POSTED","CONFIRMED","ACTIVE"].includes(String(p.status||"").toUpperCase())} onClick={()=>requestCollateralRelease(p)}>Request release</button>}
               ]} empty="No collateral positions are recorded." />
             </section>}
             {collateralTab==="history" && <section className="wf-panel wf-tab-panel-card">
-              <div className="wf-panel-header"><div><h3>Collateral movement history</h3><small>Recorded pledge, adjustment and release movements.</small></div><span className="wf-status">{collateralHistory.length} movements</span></div>
-              <DataTable rows={collateralHistory} columns={[
-                {key:"id",label:"Movement ID"},{key:"loanId",label:"Loan",render:p=>p.loanId??p.loan_id??"—"},
-                {key:"positionId",label:"Position",render:p=>p.positionId??p.position_id??"—"},
-                {key:"type",label:"Movement"},{key:"amount",label:"Amount",render:p=>money(p.amount)},
-                {key:"quantity",label:"Quantity"},{key:"createdAt",label:"Date",render:p=>formatDate(p.createdAt??p.created_at)}
-              ]} empty="No collateral movements are available." />
+              <div className="wf-panel-header"><div><h3>Collateral movement history</h3><small>Cash and security movements are separated by asset type.</small></div><span className="wf-status">{collateralHistory.length} movements</span></div>
+              <div className="wf-work-tabs" role="tablist" aria-label="Collateral movement asset type">
+                <button type="button" role="tab" aria-selected={movementSubTab==="cash"} className={movementSubTab==="cash"?"active":""} onClick={()=>setMovementSubTab("cash")}>Cash movements <span>{collateralHistory.filter(m=>!(m.securityId??m.security_id)).length}</span></button>
+                <button type="button" role="tab" aria-selected={movementSubTab==="security"} className={movementSubTab==="security"?"active":""} onClick={()=>setMovementSubTab("security")}>Security movements <span>{collateralHistory.filter(m=>Boolean(m.securityId??m.security_id)).length}</span></button>
+              </div>
+              {movementSubTab==="cash" ? <DataTable rows={collateralHistory.filter(m=>!(m.securityId??m.security_id))} columns={[
+                {key:"id",label:"Movement ID"},{key:"loanId",label:"Loan",render:m=>m.loanId??m.loan_id??"—"},{key:"positionId",label:"Position",render:m=>m.positionId??m.position_id??"—"},{key:"type",label:"Movement"},{key:"amount",label:"Cash amount",render:m=>money(m.amount??m.cashAmount??m.cash_amount)},{key:"createdAt",label:"Date",render:m=>formatDate(m.createdAt??m.created_at)}
+              ]} empty="No cash collateral movements are available." /> : <DataTable rows={collateralHistory.filter(m=>Boolean(m.securityId??m.security_id))} columns={[
+                {key:"id",label:"Movement ID"},{key:"loanId",label:"Loan",render:m=>m.loanId??m.loan_id??"—"},{key:"positionId",label:"Position",render:m=>m.positionId??m.position_id??"—"},{key:"securityId",label:"Security ID",render:m=>m.securityId??m.security_id??"—"},{key:"securityName",label:"Security",render:m=>securities.find(s=>String(s.id)===String(m.securityId??m.security_id))?.name??"—"},{key:"type",label:"Movement"},{key:"quantity",label:"Quantity",render:m=>Number(m.quantity??0).toLocaleString("en-IN")},{key:"createdAt",label:"Date",render:m=>formatDate(m.createdAt??m.created_at)}
+              ]} empty="No security collateral movements are available." />}
             </section>}
           </div>
         </section>
