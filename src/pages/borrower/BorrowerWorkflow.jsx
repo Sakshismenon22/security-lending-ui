@@ -1749,7 +1749,6 @@ export default function BorrowerWorkflow() {
              })}</div> : <div className="wf-empty-state">No loans are available yet.</div>}
            </div>}
          </section>
-        </section>
       )}
         </div>
       </div>
