@@ -58,6 +58,12 @@ function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString();
 }
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+}
  
 function money(value) {
   return Number(value || 0).toLocaleString("en-IN", {
@@ -770,7 +776,7 @@ export default function BorrowerWorkflow() {
               <tbody>{holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).length ? holdings.filter(h=>Number(h.owned_quantity??h.ownedQuantity??0)>0).map(h=>{
                 const id=h.security_id??h.securityId??h.id, owned=Number(h.owned_quantity??h.ownedQuantity??0), pledged=Number(h.pledged_quantity??h.pledgedQuantity??0), blocked=Number(h.blocked_owned??h.blockedOwned??0), available=Number(h.available_owned_quantity??h.availableOwnedQuantity??Math.max(0,owned-pledged-blocked)), price=Number(h.price??0);
                 const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
-                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDate(h.price_at??h.priceAt)}</td><td>{owned.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("OWNED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
+                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{owned.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("OWNED");setTradeQuantity("");setActiveTab("trading");}}>Sell</button></td></tr>;
               }) : <tr><td colSpan={10} className="wf-empty">No owned positions are recorded.</td></tr>}</tbody>
             </table></div>
           </section> : <section className="wf-panel wf-holdings-panel">
@@ -780,7 +786,7 @@ export default function BorrowerWorkflow() {
               <tbody>{holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).length ? holdings.filter(h=>Number(h.borrowed_quantity??h.borrowedQuantity??0)>0).map(h=>{
                 const id=h.security_id??h.securityId??h.id, borrowed=Number(h.borrowed_quantity??h.borrowedQuantity??0), pledged=Number(h.pledged_borrowed_quantity??h.pledgedBorrowedQuantity??0), blocked=Number(h.blocked_borrowed??h.blockedBorrowed??0), available=Number(h.available_borrowed_quantity??h.availableBorrowedQuantity??Math.max(0,borrowed-blocked)), price=Number(h.price??0);
                 const security={id,symbol:h.symbol,name:h.name,exchange:h.exchange,price:h.price};
-                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDate(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell borrowed</button></td></tr>;
+                return <tr key={id}><td>{id}</td><td><strong>{h.symbol??"—"}</strong></td><td>{h.name??"—"}</td><td>{price>0?money(price):"—"}</td><td>{formatDateTime(h.price_at??h.priceAt)}</td><td>{borrowed.toLocaleString("en-IN")}</td><td>{pledged.toLocaleString("en-IN")}</td><td>{blocked.toLocaleString("en-IN")}</td><td><strong className="wf-holding-available">{available.toLocaleString("en-IN")}</strong></td><td><button type="button" className="wf-small-button" disabled={available<=0} onClick={()=>{setSelectedTradeSecurity(security);setSecurityHistory([]);setTradeSide("SELL");setTradeSource("BORROWED");setTradeQuantity("");setActiveTab("trading");}}>Sell borrowed</button></td></tr>;
               }) : <tr><td colSpan={10} className="wf-empty">No settled borrowed positions are recorded.</td></tr>}</tbody>
             </table></div>
           </section>}
