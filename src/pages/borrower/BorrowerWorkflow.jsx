@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { getData, getMarketData, postData, putData } from "../../api/borrowerApi";
 import "./BorrowerWorkflow.css";
+import SecurityPriceChart from "../../components/SecurityPriceChart";
 
 const ORG_ID = "";
 
@@ -849,14 +850,8 @@ export default function BorrowerWorkflow() {
               </div>
             </section>
             <div className="wf-trading-main">
-              <section className="wf-panel wf-chart-panel">
-                {selectedTradeSecurity ? <>
-                  <div className="wf-chart-heading"><div><div className="wf-eyebrow">SECURITY PRICE</div><h2>{selectedTradeSecurity.symbol ?? selectedTradeSecurity.ticker ?? `Security #${selectedTradeSecurity.id}`}</h2><p>{selectedTradeSecurity.name ?? selectedTradeSecurity.description ?? "Price history"}</p></div><span className="wf-status">Selected</span></div>
-                  {historyLoading ? <div className="wf-loading">Loading candlestick data…</div> : tradeCandles.length ? <div className="wf-candle-chart">
-                    <div className="wf-chart-y-labels"><span>{Math.max(...tradeCandles.map(x=>x.high)).toFixed(2)}</span><span>{((Math.max(...tradeCandles.map(x=>x.high))+Math.min(...tradeCandles.map(x=>x.low)))/2).toFixed(2)}</span><span>{Math.min(...tradeCandles.map(x=>x.low)).toFixed(2)}</span></div>
-                    <div className="wf-candle-area">{tradeCandles.slice(-40).map((candle,index)=>{const min=Math.min(...tradeCandles.map(x=>x.low));const max=Math.max(...tradeCandles.map(x=>x.high));const range=max-min||1;const top=(max-candle.high)/range*100;const bottom=(max-candle.low)/range*100;const bodyTop=(max-Math.max(candle.open,candle.close))/range*100;const bodyHeight=Math.max(1,Math.abs(candle.open-candle.close)/range*100);const up=candle.close>=candle.open;return <div className="wf-candle" key={index} title={`${candle.date ?? ""} O:${candle.open} H:${candle.high} L:${candle.low} C:${candle.close}`}><i style={{top:`${top}%`,height:`${Math.max(1,bottom-top)}%`}}/><b className={up?"up":"down"} style={{top:`${bodyTop}%`,height:`${bodyHeight}%`}}/></div>;})}</div>
-                  </div> : <div className="wf-empty-state">No candlestick history is available for this security.</div>}
-                </> : <div className="wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose an instrument from your watchlist to display its candlestick chart.</p></div>}
+              <section className="wf-chart-panel">
+                {selectedTradeSecurity ? <SecurityPriceChart security={selectedTradeSecurity} candles={tradeCandles} loading={historyLoading} /> : <div className="wf-panel wf-chart-placeholder"><span>◫</span><h3>Select a security</h3><p>Choose an instrument from your watchlist to display its candlestick chart.</p></div>}
               </section>
               <section className="wf-panel wf-order-panel">
                 <div className="wf-panel-header"><h2>Order ticket</h2><span className="wf-status">Paper execution</span></div>
