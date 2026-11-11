@@ -1359,3 +1359,24 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-sidebar.is-collapsed .wf-side-nav button { justify-content:flex-start; width:auto; padding-inline:10px; }
   .wf-sidebar.is-collapsed .wf-sidebar-bottom { display:none; }
 }
+
+/* Loans: keep the section tabs and selected workspace content in one panel. */
+.wf-loan-workspace {
+  padding: 0;
+  overflow: hidden;
+}
+.wf-loan-workspace .wf-loan-tabs {
+  border: 0;
+  border-bottom: 1px solid #e2e6eb;
+  border-radius: 5px 5px 0 0;
+  padding: 0 10px;
+  box-shadow: none;
+}
+.wf-loan-workspace .wf-loan-tab-content {
+  margin: 0;
+  padding: 14px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+}
