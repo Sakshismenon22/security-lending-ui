@@ -867,3 +867,31 @@ body { background: #edf2f7; color: #17283e; font-family: 'DM Sans', Inter, 'Sego
   .wf-main-content { padding-top: 16px; }
   .wf-inline-metrics { gap: 9px 14px; }
 }
+
+/* Holdings split, loan margin accordion and finance sub-tabs */
+.wf-holdings-view .wf-work-tabs,
+.wf-operations-view .wf-work-tabs { margin: 0 0 10px; }
+.wf-holdings-view .wf-holdings-table-wrap .wf-table { min-width: 1120px; }
+.wf-loan-accordion { display: flex; flex-direction: column; gap: 8px; }
+.wf-loan-accordion-item { overflow: hidden; border: 1px solid #dfe7ed; border-radius: 7px; background: #fff; }
+.wf-loan-accordion-trigger {
+  display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 13px 15px; border: 0; color: #183650; background: #fbfcfd; text-align: left; cursor: pointer;
+}
+.wf-loan-accordion-trigger:hover, .wf-loan-accordion-trigger[aria-expanded="true"] { background: #f0f8f5; }
+.wf-loan-accordion-trigger > span:first-child { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.wf-loan-accordion-trigger strong { font-size: 11px; }
+.wf-loan-accordion-trigger small { color: #77899a; font-size: 9px; }
+.wf-loan-accordion-meta { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.wf-loan-accordion-meta em { font-style: normal; }
+.wf-loan-accordion-meta b { color: #078467; font-size: 18px; }
+.wf-loan-accordion-body { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-top: 1px solid #e5edf1; }
+.wf-loan-accordion-body h4 { margin: 5px 0 0; color: #1c3b55; font-size: 11px; }
+.wf-loan-accordion-body .wf-summary-grid { margin: 0; }
+.wf-loan-accordion-body .wf-inline-form { margin: 0; padding: 12px; border: 1px solid #e4ebf0; border-radius: 6px; background: #fafcfd; }
+.wf-loan-accordion-body .wf-table-wrap { max-height: 260px; }
+.wf-operations-view.wf-tabbed-workspace .wf-tab-panel { min-height: 220px; }
+@media (max-width: 620px) {
+  .wf-loan-accordion-trigger { align-items: flex-start; }
+  .wf-loan-accordion-meta { flex-wrap: wrap; justify-content: flex-end; }
+}
