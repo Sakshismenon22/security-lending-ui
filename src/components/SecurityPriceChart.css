@@ -1,0 +1,20 @@
+.wf-tv-chart { min-width: 0; overflow: hidden; border: 1px solid #dfe6ed; border-radius: 7px; background: #fff; }
+.wf-tv-chart.is-maximized { position: fixed; inset: 12px; z-index: 1200; display: flex; flex-direction: column; box-shadow: 0 18px 60px rgba(10,25,40,.28); }
+.wf-tv-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-bottom: 1px solid #e8edf2; }
+.wf-tv-instrument { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wf-tv-instrument strong { color: #183650; font-size: 13px; }
+.wf-tv-instrument span { overflow: hidden; color: #8493a2; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.wf-tv-actions { display: flex; gap: 5px; }
+.wf-tv-actions button { display: grid; place-items: center; width: 29px; height: 27px; border: 1px solid #dce5ec; border-radius: 4px; color: #536b7e; background: #fff; font-size: 16px; cursor: pointer; }
+.wf-tv-actions button:hover { color: #087b60; border-color: #9bd9c2; background: #f2faf6; }
+.wf-tv-subtoolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 11px; border-bottom: 1px solid #edf1f4; }
+.wf-tv-ranges { display: flex; flex-wrap: wrap; gap: 3px; }
+.wf-tv-ranges button { min-width: 32px; padding: 5px 7px; border: 0; border-radius: 4px; color: #748497; background: transparent; font-size: 9px; font-weight: 700; cursor: pointer; }
+.wf-tv-ranges button:hover, .wf-tv-ranges button.active { color: #087b60; background: #eaf7f1; }
+.wf-tv-hint { color: #9aa6b2; font-size: 9px; }
+.wf-tv-canvas { width: 100%; height: 340px; }
+.wf-tv-chart.is-maximized .wf-tv-canvas { flex: 1; min-height: 0; height: auto; }
+.wf-tv-empty { display: grid; place-items: center; min-height: 180px; color: #8795a4; font-size: 11px; }
+.wf-tv-chart.is-collapsed .wf-tv-toolbar { border-bottom: 0; }
+.wf-tv-chart.is-maximized .wf-tv-empty { flex: 1; }
+@media (max-width: 620px) { .wf-tv-hint { display: none; } .wf-tv-canvas { height: 280px; } .wf-tv-chart.is-maximized { inset: 5px; } }
