@@ -1562,8 +1562,9 @@ export default function BorrowerWorkflow() {
              <div>
                <div className="wf-eyebrow">BORROWING OPERATIONS</div>
                <h2>Loans</h2>
-              <p>Create loan requests and monitor loan lifecycle, margin calls and collateral.</p></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh loans</button>
+               <p>Create loan requests and monitor loan lifecycle, margin calls and collateral.</p>
              </div>
+             <button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh loans</button>
            </div>
 
            <div className="wf-panel wf-loan-tabs">
