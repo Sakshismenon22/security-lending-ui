@@ -727,7 +727,6 @@ export default function BorrowerWorkflow() {
             <div className="wf-nav-group-label">MARKETS & PORTFOLIO</div>
             <button className={activeTab === "trading" ? "active" : ""} onClick={() => setActiveTab("trading")} title="Trading"><span className="wf-nav-icon">▥</span><span>Trading</span></button>
             <button className={activeTab === "holdings" ? "active" : ""} onClick={() => setActiveTab("holdings")} title="My Holdings"><span className="wf-nav-icon">▦</span><span>My Holdings</span></button>
-            <button className={activeTab === "securities" ? "active" : ""} onClick={() => setActiveTab("securities")} title="Securities"><span className="wf-nav-icon">⌕</span><span>Securities</span></button>
             <div className="wf-nav-group-label">SECURITIES FINANCE</div>
             <button className={activeTab === "msla" ? "active" : ""} onClick={() => setActiveTab("msla")} title="Agreements"><span className="wf-nav-icon">▤</span><span>Agreements</span></button>
             <button className={activeTab === "locates" ? "active" : ""} onClick={() => setActiveTab("locates")} title="Borrow / Locate"><span className="wf-nav-icon">⇄</span><span>Borrow / Locate</span></button>
