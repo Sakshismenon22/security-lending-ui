@@ -1118,6 +1118,13 @@ export default function BorrowerWorkflow() {
 
 {!loading && activeTab === "msla" && (
         <section className="wf-content wf-msla-dashboard">
+          <div className="wf-section-heading">
+            <div>
+              <div className="wf-eyebrow">SECURITIES FINANCE / CONTRACTS</div>
+              <h2>Agreements</h2>
+              <p>Manage master securities lending agreements and proposed terms.</p>
+            </div>
+          </div>
           <div className="wf-panel wf-msla-grid-panel">
             <div className="wf-msla-toolbar">
               <div>
