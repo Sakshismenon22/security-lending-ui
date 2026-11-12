@@ -4,6 +4,7 @@ import "./LenderWorkflow.css";
 import DataTable from "../../components/common/DataTable";
 import StatusBadge from "../../components/common/StatusBadge";
 import MetricStrip from "../../components/common/MetricStrip";
+import PageHeader from "../../components/common/PageHeader";
 
 const resources = ["borrowers","inventory","inventory-history","agreements","locates","reservations","loans","collateral","collateral-history","returns","lifecycle-requests","valuations","margin-calls","recalls","fees","rebates","accruals","defaults","buy-ins","rebate-payments","ledger","notifications","audit"];
 const nav = [
@@ -100,7 +101,7 @@ export default function LenderWorkflow() {
       {notice&&<div className="lw-notice">{notice}</div>}
       {loading&&<div className="lw-loading">Refreshing lender records…</div>}
       {!loading&&active==="dashboard"&&<>
-        <div className="lw-page-title"><div><span>CONTROL CENTRE</span><h2>Operational overview</h2><p>Current queues and exposures for this lender organization.</p></div></div>
+        <PageHeader className="lw-page-title" eyebrowClassName="lw-page-eyebrow" eyebrow="CONTROL CENTRE" title="Operational overview" description="Current queues and exposures for this lender organization." />
         <MetricStrip className="lw-kpis" itemClassName="lw-kpi-item" items={[
           { label: "Open locate requests", value: openLocates.length },
           { label: "Active loans", value: openLoans.length },
