@@ -3,6 +3,7 @@ import { getData, getMarketData, postData, putData } from "../../api/borrowerApi
 import "./BorrowerWorkflow.css";
 import SecurityPriceChart from "../../components/SecurityPriceChart";
 import DataTable from "../../components/common/DataTable";
+import MetricStrip from "../../components/common/MetricStrip";
 
 const ORG_ID = "";
 
@@ -735,14 +736,14 @@ export default function BorrowerWorkflow() {
           <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
           <section className="wf-panel wf-recent-activity">
             <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
-            <div className="wf-summary-grid">
-              <div className="wf-summary-tile"><span>Available cash</span><strong>{account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable"}</strong></div>
-              <div className="wf-summary-tile"><span>Blocked cash</span><strong>{account ? money(account.blocked ?? account.blockedCash ?? 0) : "—"}</strong></div>
-              <div className="wf-summary-tile"><span>Agreements</span><strong>{agreements.length}</strong></div>
-              <div className="wf-summary-tile"><span>Locate requests</span><strong>{locates.length}</strong></div>
-              <div className="wf-summary-tile"><span>Reservations</span><strong>{reservations.length}</strong></div>
-              <div className="wf-summary-tile"><span>Loans</span><strong>{loans.length}</strong></div>
-            </div>
+            <MetricStrip className="wf-summary-grid" itemClassName="wf-summary-tile" items={[
+              { label: "Available cash", value: account ? money(account.available ?? account.availableCash ?? account.cashAvailable ?? 0) : "Unavailable" },
+              { label: "Blocked cash", value: account ? money(account.blocked ?? account.blockedCash ?? 0) : "—" },
+              { label: "Agreements", value: agreements.length },
+              { label: "Locate requests", value: locates.length },
+              { label: "Reservations", value: reservations.length },
+              { label: "Loans", value: loans.length },
+            ]} />
           </section>
           <div className="wf-dashboard-grid">
             <button className="wf-dashboard-card" onClick={() => setActiveTab("trading")}><span>MARKETS</span><strong>Trading</strong><small>Open your watchlist, view charts and prepare orders</small><b>Open trading →</b></button>
