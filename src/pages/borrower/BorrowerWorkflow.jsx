@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { getData, getMarketData, postData, putData } from "../../api/borrowerApi";
 import "./BorrowerWorkflow.css";
 import SecurityPriceChart from "../../components/SecurityPriceChart";
+import DataTable from "../../components/common/DataTable";
 
 const ORG_ID = "";
 
@@ -81,31 +82,6 @@ function Field({ label, children, hint }) {
       {children}
       {hint && <small>{hint}</small>}
     </label>
-  );
-}
- 
-function DataTable({ columns, rows, empty = "No records found" }) {
-  return (
-    <div className="wf-table-wrap">
-      <table className="wf-table">
-        <thead>
-          <tr>{columns.map((c) => <th key={c.key}>{c.label}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.length ? rows.map((row, index) => (
-            <tr key={row.id ?? row.locateId ?? row.reservationId ?? index}>
-              {columns.map((c) => (
-                <td key={c.key}>
-                  {c.render ? c.render(row) : (row[c.key] ?? "—")}
-                </td>
-              ))}
-            </tr>
-          )) : (
-            <tr><td colSpan={columns.length} className="wf-empty">{empty}</td></tr>
-          )}
-        </tbody>
-      </table>
-    </div>
   );
 }
  
