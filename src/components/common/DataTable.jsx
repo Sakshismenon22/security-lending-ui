@@ -1,4 +1,4 @@
-export default function DataTable({ rows = [], columns = [], empty = "No records found", wrapperClass = "data-table-wrap", tableClass = "data-table", emptyClass = "data-table-empty", rowKey }) {
+export default function DataTable({ rows = [], columns = [], empty = "No records found", wrapperClass = "wf-table-wrap", tableClass = "wf-table", emptyClass = "wf-empty", rowKey }) {
   const getKey = (row, index) => rowKey ? rowKey(row, index) : row.id ?? row.locateId ?? row.reservationId ?? index;
 
   return (
