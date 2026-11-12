@@ -4,6 +4,7 @@ import "./BorrowerWorkflow.css";
 import SecurityPriceChart from "../../components/SecurityPriceChart";
 import DataTable from "../../components/common/DataTable";
 import MetricStrip from "../../components/common/MetricStrip";
+import PageHeader from "../../components/common/PageHeader";
 
 const ORG_ID = "";
 
@@ -733,7 +734,7 @@ export default function BorrowerWorkflow() {
  
       {!loading && activeTab === "dashboard" && (
         <section className="wf-content wf-dashboard-view">
-          <div className="wf-section-heading"><div><div className="wf-eyebrow">OVERVIEW</div><h2>Borrower dashboard</h2><p>Monitor your securities lending activity and access key workflows.</p></div></div>
+          <PageHeader className="wf-section-heading" eyebrowClassName="wf-eyebrow" eyebrow="OVERVIEW" title="Borrower dashboard" description="Monitor your securities lending activity and access key workflows." />
           <section className="wf-panel wf-recent-activity">
             <div className="wf-panel-header"><div><h2>Recent activity</h2><small>Current organization balances and workflow volumes</small></div><button className="wf-secondary" type="button" onClick={loadAll}>↻ Refresh data</button></div>
             <MetricStrip className="wf-summary-grid" itemClassName="wf-summary-tile" items={[
