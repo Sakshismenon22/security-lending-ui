@@ -3,6 +3,7 @@ import { lenderGet, lenderPost } from "../../api/lenderApi";
 import "./LenderWorkflow.css";
 import DataTable from "../../components/common/DataTable";
 import StatusBadge from "../../components/common/StatusBadge";
+import MetricStrip from "../../components/common/MetricStrip";
 
 const resources = ["borrowers","inventory","inventory-history","agreements","locates","reservations","loans","collateral","collateral-history","returns","lifecycle-requests","valuations","margin-calls","recalls","fees","rebates","accruals","defaults","buy-ins","rebate-payments","ledger","notifications","audit"];
 const nav = [
@@ -100,7 +101,13 @@ export default function LenderWorkflow() {
       {loading&&<div className="lw-loading">Refreshing lender records…</div>}
       {!loading&&active==="dashboard"&&<>
         <div className="lw-page-title"><div><span>CONTROL CENTRE</span><h2>Operational overview</h2><p>Current queues and exposures for this lender organization.</p></div></div>
-        <div className="lw-kpis">{[["Open locate requests",openLocates.length],["Active loans",openLoans.length],["Open margin calls",openCalls.length],["Inventory positions",d("inventory").length],["Pending collateral",d("collateral").filter(x=>["PENDING","SUBMITTED","PENDING_CONFIRMATION"].includes(String(x.status||"").toUpperCase())).length]].map(([label,value])=><div key={label}><small>{label}</small><strong>{value}</strong></div>)}</div>
+        <MetricStrip className="lw-kpis" itemClassName="lw-kpi-item" items={[
+          { label: "Open locate requests", value: openLocates.length },
+          { label: "Active loans", value: openLoans.length },
+          { label: "Open margin calls", value: openCalls.length },
+          { label: "Inventory positions", value: d("inventory").length },
+          { label: "Pending collateral", value: d("collateral").filter(x => ["PENDING","SUBMITTED","PENDING_CONFIRMATION"].includes(String(x.status || "").toUpperCase())).length },
+        ]} />
         <div className="lw-grid-two"><section className="lw-panel"><h3>Locate requests requiring review</h3><DataTable wrapperClass="lw-table-wrap" tableClass="lw-table" emptyClass="lw-empty" rows={openLocates.slice(0,6)} columns={[{key:"id",label:"Request"},{key:"borrowerId",label:"Borrower"},{key:"securityId",label:"Security"},{key:"quantity",label:"Quantity"},{key:"status",label:"Status",render:r=><StatusBadge className="lw-status" value={r.status}/>}]} /></section><section className="lw-panel"><h3>Margin call watchlist</h3><DataTable wrapperClass="lw-table-wrap" tableClass="lw-table" emptyClass="lw-empty" rows={openCalls.slice(0,6)} columns={[{key:"id",label:"Call"},{key:"loanId",label:"Loan"},{key:"amount",label:"Amount",render:r=>money(r.amount)},{key:"dueAt",label:"Due",render:r=>date(r.dueAt??r.due_at)},{key:"status",label:"Status",render:r=><StatusBadge className="lw-status" value={r.status}/>}]} /></section></div>
       </>}
       {!loading&&active==="locates"&&<><div className="lw-page-title"><div><span>BORROWER REQUEST INBOX</span><h2>Locate request queue</h2><p>Review borrower demand against lender-controlled inventory before responding.</p></div></div><div className="lw-panel"><DataTable wrapperClass="lw-table-wrap" tableClass="lw-table" emptyClass="lw-empty" rows={d("locates")} columns={[{key:"id",label:"Locate ID"},{key:"borrowerId",label:"Borrower"},{key:"securityId",label:"Security"},{key:"quantity",label:"Requested"},{key:"expiresAt",label:"Expiry",render:r=>date(r.expiresAt??r.expires_at)},{key:"status",label:"Status",render:r=><StatusBadge className="lw-status" value={r.status}/>},{key:"actions",label:"Decision",render:r=><div className="lw-actions">{actionButton(`locate-${r.id}`,"Approve",()=>{const q=window.prompt("Approved quantity",String(r.quantity||""));if(q&&Number(q)>0)decide("locates",r.id,true,q);})}{actionButton(`locate-${r.id}`,"Reject",()=>decide("locates",r.id,false))}</div>}]} /></div><div className="lw-note">Approve only the quantity validated against your internal inventory. The borrower sees the decision and resulting reservation status, not your available inventory.</div></>}
